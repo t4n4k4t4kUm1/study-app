@@ -1,76 +1,57 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ItemForm } from './components/ItemForm'
-import { ItemList } from './components/ItemList'
-import { parseItemInput, recentSubjects, type Item, type ItemInput } from './lib/items'
-import { DuplicateItemError, type ItemRepository } from './lib/itemRepository'
-import { loadLastSubject, saveLastSubject } from './lib/lastSubject'
+// 画面全体。URL の # を見て、どのページを出すかを切り替える。
+import type { Route } from './lib/router'
+import type { StudySetRepository } from './lib/studySetRepository'
+import { useHashRoute } from './lib/useHashRoute'
+import { FlashcardsPage } from './pages/FlashcardsPage'
+import { HomePage } from './pages/HomePage'
+import { NewSetPage } from './pages/NewSetPage'
+import { SetPage } from './pages/SetPage'
 
-type Props = { repository: ItemRepository | null }
+type Props = { repository: StudySetRepository | null }
 
 export default function App({ repository }: Props) {
-  const [items, setItems] = useState<Item[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [highlightId, setHighlightId] = useState<string | null>(null)
-  const subjects = useMemo(() => recentSubjects(items), [items])
-
-  useEffect(() => {
-    if (!repository) return
-    repository
-      .list()
-      .then(setItems)
-      .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : '読み込みに失敗しました'))
-      .finally(() => setLoading(false))
-  }, [repository])
-
-  const handleSave = useCallback(
-    async (input: ItemInput) => {
-      if (!repository) return { ok: false as const, error: '保存先が設定されていません' }
-      const parsed = parseItemInput(input)
-      if (!parsed.ok) return parsed
-      try {
-        const saved = await repository.add(parsed.value)
-        setItems((prev) => [saved, ...prev])
-        setHighlightId(saved.id)
-        saveLastSubject(saved.subject)
-        return { ok: true as const }
-      } catch (e) {
-        if (e instanceof DuplicateItemError) return { ok: false as const, error: e.message }
-        return { ok: false as const, error: e instanceof Error ? e.message : '保存に失敗しました' }
-      }
-    },
-    [repository],
-  )
-
+  const route = useHashRoute()
   return (
     <div className="app">
-      <header>
-        <h1>覚えたいこと</h1>
-        <p className="tagline">出会ったらすぐ保存。あとで自分で問題にする。</p>
+      <header className="site-header">
+        <a href="#/" className="brand">
+          学習アプリ<span className="brand-sub">（仮称）</span>
+        </a>
       </header>
-
-      {!repository ? (
-        <section className="setup" role="alert">
-          <h2>保存先（Supabase）が設定されていません</h2>
-          <p>
-            環境変数 <code>VITE_SUPABASE_URL</code> と <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> を設定してください。
-            手順は README.md にあります。
-          </p>
-        </section>
-      ) : (
-        <>
-          <ItemForm initialSubject={loadLastSubject()} subjects={subjects} onSave={handleSave} />
-          <section>
-            <h2 className="list-title">保存したこと{!loading && <span className="count">{items.length}件</span>}</h2>
-            {loadError && (
-              <p className="error" role="alert">
-                {loadError}
-              </p>
-            )}
-            {loading ? <p className="empty">読み込み中…</p> : <ItemList items={items} highlightId={highlightId} />}
-          </section>
-        </>
-      )}
+      <main>{repository ? <Page route={route} repository={repository} /> : <SetupNotice />}</main>
     </div>
+  )
+}
+
+function Page({ route, repository }: { route: Route; repository: StudySetRepository }) {
+  switch (route.name) {
+    case 'home':
+      return <HomePage repository={repository} />
+    case 'new':
+      return <NewSetPage repository={repository} />
+    // key に id を渡すと、別のセットに移ったときにページの状態が作り直される
+    case 'set':
+      return <SetPage key={route.id} repository={repository} id={route.id} />
+    case 'cards':
+      return <FlashcardsPage key={route.id} repository={repository} id={route.id} />
+    case 'notFound':
+      return (
+        <section className="notice">
+          <h1>ページが見つかりません</h1>
+          <a href="#/">学習セットの一覧へ</a>
+        </section>
+      )
+  }
+}
+
+function SetupNotice() {
+  return (
+    <section className="notice" role="alert">
+      <h1>保存先（Supabase）が設定されていません</h1>
+      <p>
+        環境変数 <code>VITE_SUPABASE_URL</code> と <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> を設定してください。
+        手順は README.md にあります。
+      </p>
+    </section>
   )
 }

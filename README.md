@@ -1,6 +1,6 @@
-# 覚えたいこと（学習アプリ・仮称）
+# 学習アプリ（仮称）
 
-勉強中に出会った「覚えたいこと」をその場で保存し、それを答えにした問題を自分で作って覚える Web アプリ。
+問題と答えの組（カード）をまとめた「学習セット」を作り、いろいろな形式で取り組んで覚える Web アプリ。科目は問わない。
 授業「ソフトウェアクリエイション1」の制作物。
 
 - 公開URL：（Vercel で公開したら書く）
@@ -8,18 +8,27 @@
 
 ## 今できること（第1週）
 
-- 用語・科目・説明・出会った場所を入力して保存する（用語だけでも保存できる）
-- 保存したものを新しい順に一覧表示する。再読み込みしても消えない
-- 同じ科目に同じ用語は二重に保存しない
-- 前回保存した科目を、次の入力の初期値にする
+- 学習セットを作る：タイトル・説明と、問題と答えの組を何枚でも入力できる
+  - 最後のカードの「答え」で Tab を押すと次のカードが増える。Ctrl+Enter で作成
+- 学習セットの一覧と中身を見る
+- カードで学ぶ：クリックか Space でめくる、← → で前後に移動、シャッフル、答えを先に出す
+
+## これから（SC1 の必須）
+
+- 入力：問題を見てキーボードで答えを入力する
+- 4択：4つの選択肢から答えを選ぶ
+- マッチ：いくつかの問題と答えを並べ、正しい組み合わせを選ぶ
 
 ## 初めて公開するまでの手順
 
 ### 1. Supabase（データの保存先）
 
-1. https://supabase.com にサインアップし、New project でプロジェクトを作る（Region は Tokyo 推奨）
-2. 左メニューの SQL Editor を開き、`supabase/migrations/20261001000000_create_items.sql` の中身を貼り付けて Run
-3. 画面上部の Connect（または Project Settings → API Keys）で次の2つを控える
+1. https://supabase.com でプロジェクトを作る（Region は Tokyo 推奨）
+2. SQL Editor で `supabase/migrations/` の SQL を**ファイル名の順に**貼り付けて Run する
+   - `20261001000000_create_items.sql`（最初の版。次のファイルで消える）
+   - `20261001120000_study_sets_and_cards.sql`
+   - すでに1つ目を実行済みなら、2つ目だけでよい
+3. Connect（または Project Settings → API Keys）で次の2つを控える
    - Project URL（`https://xxxx.supabase.co`）
    - Publishable key（`sb_publishable_` で始まる）。Secret key は使わない
 
@@ -53,18 +62,24 @@ npm run dev
 
 ```
 src/
-  main.tsx                 起動。Supabase 版のリポジトリを作って App に渡す
-  App.tsx                  画面全体。一覧の読み込みと保存処理
-  components/
-    ItemForm.tsx           入力フォーム
-    ItemList.tsx           一覧
+  main.tsx                    起動。Supabase 版のリポジトリを作って App に渡す
+  App.tsx                     URL の # を見てページを切り替える
+  pages/
+    HomePage.tsx              学習セットの一覧
+    NewSetPage.tsx            学習セットを作る
+    SetPage.tsx               学習セットの中身・学習形式の選択
+    FlashcardsPage.tsx        カードで学ぶ
+    LoadStatus.tsx            読み込み中・失敗・見つからないの表示
   lib/
-    items.ts               型と、入力の検証・整形（純粋な関数）
-    itemRepository.ts      保存先とのやり取り（Supabase 版とテスト用のメモリ版）
-    supabaseClient.ts      Supabase への接続
-    database.types.ts      DB の型（Supabase CLI で自動生成したものに置き換える）
-    lastSubject.ts         前回の科目を覚える
-  items.test.ts / App.test.tsx   テスト
-supabase/migrations/       DB の変更履歴（SQL）
-AGENTS.md                  AI エージェント向けのルール
+    studySet.ts               型と、作成フォームの検証・整形（純粋な関数）
+    deck.ts                   カード学習の状態と操作（純粋な関数）
+    router.ts                 URL と画面の対応（純粋な関数）
+    studySetRepository.ts     保存先とのやり取り（Supabase 版とテスト用のメモリ版）
+    useHashRoute.ts           URL の変化で画面を描き直すフック
+    useStudySet.ts            学習セットを1つ読み込むフック
+    supabaseClient.ts         Supabase への接続
+    database.types.ts         DB の型（Supabase CLI で自動生成したものに置き換える）
+  *.test.ts(x)                テスト
+supabase/migrations/          DB の変更履歴（SQL）
+AGENTS.md                     AI エージェント向けのルール
 ```
