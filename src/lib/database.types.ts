@@ -14,18 +14,21 @@ export type Database = {
           title: string
           description: string | null
           created_at: string
+          user_id: string | null
         }
         Insert: {
           id?: string
           title: string
           description?: string | null
           created_at?: string
+          user_id?: string | null
         }
         Update: {
           id?: string
           title?: string
           description?: string | null
           created_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -70,6 +73,10 @@ export type Database = {
       create_study_set: {
         Args: { p_title: string; p_description: string | null; p_cards: Json }
         Returns: string
+      }
+      update_study_set: {
+        Args: { p_id: string; p_title: string; p_description: string | null; p_cards: Json }
+        Returns: undefined
       }
     }
     Enums: { [_ in never]: never }

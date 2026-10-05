@@ -1,4 +1,4 @@
-// 学習セットとカードの型と、作成フォームの入力を検証・整形する純粋な関数。
+// 学習セットとカードの型と、作成・編集フォームの入力を検証・整形する純粋な関数。
 // DB や画面に依存しないので、Vitest で単体テストできる。
 
 export type Card = {
@@ -25,15 +25,15 @@ export type StudySet = {
   cards: Card[] // position の順
 }
 
-/** 作成フォームの生の入力 */
-export type CardDraft = { question: string; answer: string }
+/** 作成・編集フォームの生の入力。id は編集で「もともとあったカード」にだけ付く */
+export type CardDraft = { id?: string; question: string; answer: string }
 export type SetDraft = { title: string; description: string; cards: CardDraft[] }
 
 /** 検証済みで、そのまま保存できる形 */
 export type NewStudySet = {
   title: string
   description: string | null
-  cards: { question: string; answer: string }[]
+  cards: { id?: string; question: string; answer: string }[] // id なし＝新しいカード
 }
 
 export const LIMITS = { title: 100, description: 500, question: 500, answer: 500, cards: 500 } as const
@@ -48,7 +48,7 @@ export function normalizeSpaces(s: string): string {
   return s.replace(/[\s　]+/g, ' ').trim()
 }
 
-/** 作成フォームの入力を検証して、保存できる形にする */
+/** 作成・編集フォームの入力を検証して、保存できる形にする */
 export function parseSetDraft(draft: SetDraft): ParseResult {
   const title = normalizeSpaces(draft.title)
   if (title === '') return { ok: false, error: 'タイトルを入力してください' }
@@ -71,7 +71,7 @@ export function parseSetDraft(draft: SetDraft): ParseResult {
       return { ok: false, error: `${n}枚目の問題は${LIMITS.question}文字以内にしてください`, cardIndex: i }
     if (answer.length > LIMITS.answer)
       return { ok: false, error: `${n}枚目の答えは${LIMITS.answer}文字以内にしてください`, cardIndex: i }
-    cards.push({ question, answer })
+    cards.push(card.id ? { id: card.id, question, answer } : { question, answer })
   }
 
   if (cards.length === 0) return { ok: false, error: 'カードを1枚以上入力してください' }

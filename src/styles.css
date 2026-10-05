@@ -54,14 +54,35 @@ a {
   padding: 0 16px 64px;
 }
 .site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
 }
 .brand {
+  white-space: nowrap;
   color: var(--text);
   font-weight: 700;
   text-decoration: none;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.85rem;
+}
+.account .link-button {
+  white-space: nowrap;
+}
+.account-email {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .brand-sub {
   color: var(--muted);
@@ -160,7 +181,8 @@ button {
   font-size: 0.9rem;
 }
 .icon-button {
-  width: 36px;
+  -webkit-tap-highlight-color: transparent;
+  width: 32px;
   height: 36px;
   border: none;
   border-radius: 8px;
@@ -169,6 +191,10 @@ button {
   font-size: 1.2rem;
 }
 .icon-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.icon-button.remove:hover:not(:disabled) {
   background: var(--error-soft);
   color: var(--error);
 }
@@ -269,7 +295,7 @@ input[type='checkbox'] {
 }
 .card-row {
   display: grid;
-  grid-template-columns: 28px 1fr 1fr 36px;
+  grid-template-columns: 32px 1fr 1fr auto;
   gap: 10px;
   align-items: start;
   padding: 12px;
@@ -280,14 +306,42 @@ input[type='checkbox'] {
 .card-row.invalid {
   border-color: var(--error);
 }
+.card-row.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+  border-color: var(--accent);
+}
+.card-row-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-top: 22px;
+}
+.drag-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 6px;
+  user-select: none;
+}
+.drag-handle:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
 .card-no {
-  padding-top: 30px;
   color: var(--muted);
   font-size: 0.85rem;
-  text-align: center;
 }
-.card-row .icon-button {
-  margin-top: 26px;
+.row-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 22px;
 }
 .add-row {
   margin-top: 10px;
@@ -304,19 +358,27 @@ input[type='checkbox'] {
   min-width: 160px;
 }
 @media (max-width: 560px) {
-  /* スマホでは問題と答えを縦に並べる */
-  .card-row {
-    grid-template-columns: 1fr 36px;
-  }
-  .card-no {
+  .brand-sub {
     display: none;
   }
-  .card-row .field {
-    grid-column: 1;
+  /* スマホでは問題と答えを縦に並べ、番号とボタンを上の段にまとめる */
+  .card-row {
+    grid-template-columns: auto 1fr;
+    gap: 6px 10px;
   }
-  .card-row .icon-button {
+  .card-row-head {
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 0;
+  }
+  .card-row .field {
+    grid-column: 1 / -1;
+  }
+  .row-actions {
     grid-column: 2;
     grid-row: 1;
+    justify-self: end;
+    margin-top: 0;
   }
   .form-actions .button {
     width: 100%;
@@ -492,4 +554,55 @@ input[type='checkbox'] {
   justify-content: center;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* ---------- 削除・ログイン ---------- */
+.button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--surface);
+}
+.link-button.danger {
+  color: var(--error);
+}
+.danger-zone {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.danger-zone.confirm {
+  padding: 16px;
+  border: 1.5px solid var(--error);
+  border-radius: 12px;
+  background: var(--error-soft);
+}
+.danger-zone p {
+  margin: 0 0 12px;
+}
+.danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.page-head h1 {
+  margin: 0;
+}
+.login {
+  max-width: 420px;
+  margin: 24px auto;
+}
+.login h1 {
+  margin: 0;
+}
+.login .muted {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.info {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 0.9rem;
 }

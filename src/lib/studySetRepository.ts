@@ -11,6 +11,10 @@ export interface StudySetRepository {
   getSet(id: string): Promise<StudySet | null>
   /** 学習セットをカードごと作り、新しいセットの id を返す */
   createSet(set: NewStudySet): Promise<string>
+  /** 学習セットを書き換える。カードは並び順どおりに全部渡す（id なし＝追加、渡さなかったもの＝削除） */
+  updateSet(id: string, set: NewStudySet): Promise<void>
+  /** 学習セットをカードごと削除する */
+  deleteSet(id: string): Promise<void>
 }
 
 export function createSupabaseStudySetRepository(client: SupabaseClient<Database>): StudySetRepository {
@@ -47,6 +51,25 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
       if (error) throw new Error(`保存できませんでした: ${error.message}`)
       return data
     },
+
+    async updateSet(id, set) {
+      // DB の関数 update_study_set を呼ぶ。セットとカードの書き換えが1回の処理でまとめて行われる
+      const { error } = await client.rpc('update_study_set', {
+        p_id: id,
+        p_title: set.title,
+        p_description: set.description,
+        p_cards: set.cards,
+      })
+      if (error) throw new Error(`保存できませんでした: ${error.message}`)
+    },
+
+    async deleteSet(id) {
+      // カードは DB の「on delete cascade」でセットと一緒に消える
+      // select('id') で消えた行を返してもらい、0行なら（他人のセットなどで）消せなかったと分かる
+      const { data, error } = await client.from('study_sets').delete().eq('id', id).select('id')
+      if (error) throw new Error(`削除できませんでした: ${error.message}`)
+      if (data.length === 0) throw new Error('削除できませんでした: 学習セットが見つかりません')
+    },
   }
 }
 
@@ -74,6 +97,25 @@ export function createMemoryStudySetRepository(initial: StudySet[] = []): StudyS
         cards: set.cards.map((c, i) => ({ ...c, id: crypto.randomUUID(), position: i })),
       })
       return id
+    },
+    async updateSet(id, set) {
+      const target = sets.find((s) => s.id === id)
+      if (!target) throw new Error('保存できませんでした: 学習セットが見つかりません')
+      if (set.cards.some((c) => c.id && !target.cards.some((old) => old.id === c.id)))
+        throw new Error('保存できませんでした: このセットにないカードが含まれています')
+      target.title = set.title
+      target.description = set.description
+      target.cards = set.cards.map((c, i) => ({
+        id: c.id ?? crypto.randomUUID(),
+        position: i,
+        question: c.question,
+        answer: c.answer,
+      }))
+    },
+    async deleteSet(id) {
+      const index = sets.findIndex((s) => s.id === id)
+      if (index === -1) throw new Error('削除できませんでした: 学習セットが見つかりません')
+      sets.splice(index, 1)
     },
   }
 }

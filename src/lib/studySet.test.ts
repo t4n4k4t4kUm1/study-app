@@ -86,3 +86,20 @@ describe('timeAgo', () => {
     expect(timeAgo(iso, now)).toBe(expected)
   })
 })
+
+describe('parseSetDraft（編集）', () => {
+  it('もともとあったカードの id は残し、新しいカードには付けない', () => {
+    const r = parseSetDraft(
+      draft({
+        cards: [
+          { id: 'c1', question: '먹다', answer: '食べる' },
+          { question: '자다', answer: '寝る' },
+        ],
+      }),
+    )
+    expect(r.ok && r.value.cards).toEqual([
+      { id: 'c1', question: '먹다', answer: '食べる' },
+      { question: '자다', answer: '寝る' },
+    ])
+  })
+})

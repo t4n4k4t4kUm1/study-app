@@ -6,10 +6,14 @@
 - 公開URL：（Vercel で公開したら書く）
 - 技術：React + Vite + TypeScript / Supabase / Vercel
 
-## 今できること（第1週）
+## 今できること
 
+- ログイン・新規登録・ログアウト（メールアドレスとパスワード）。学習セットは作った本人だけが見られる
 - 学習セットを作る：タイトル・説明と、問題と答えの組を何枚でも入力できる
-  - 最後のカードの「答え」で Tab を押すと次のカードが増える。Ctrl+Enter で作成
+  - 最後のカードの「答え」で Tab を押すと次のカードが増える。Ctrl+Enter で保存
+- 学習セットを編集する：タイトル・説明の変更、カードの追加・削除・書き換え
+  - 並べ替えは ⠿ をつかんでドラッグするか、↑↓ ボタン
+- 学習セットを削除する（確認つき。カードも一緒に消える）
 - 学習セットの一覧と中身を見る
 - カードで学ぶ：クリックか Space でめくる、← → で前後に移動、シャッフル、答えを先に出す
 
@@ -27,10 +31,26 @@
 2. SQL Editor で `supabase/migrations/` の SQL を**ファイル名の順に**貼り付けて Run する
    - `20261001000000_create_items.sql`（最初の版。次のファイルで消える）
    - `20261001120000_study_sets_and_cards.sql`
-   - すでに1つ目を実行済みなら、2つ目だけでよい
+   - `20261005120000_owners_and_editing.sql`（ログインと編集）
+   - 実行済みのファイルは飛ばして、まだのものだけを順に実行する
 3. Connect（または Project Settings → API Keys）で次の2つを控える
    - Project URL（`https://xxxx.supabase.co`）
    - Publishable key（`sb_publishable_` で始まる）。Secret key は使わない
+
+### 1-2. ログインの設定（Supabase）
+
+1. Authentication の Sign In / Providers（Auth Providers）ページで Email を開き、**Confirm email をオフ**にする（画面の名前は変わることがある）
+   - Supabase 標準のメール送信は、プロジェクトのメンバー以外には送れず、1時間に2通まで。
+     オンのままだと、先生や友だちがアカウントを作れない
+   - オフにすると、メールアドレスの持ち主かどうかは確かめずに登録できる（授業での利用なので許容）
+2. アプリでアカウントを作る
+3. ログイン導入前に作ったセットは持ち主が空なので、誰からも見えない。自分のものにするには、SQL Editor で1回だけ実行する
+
+```sql
+update public.study_sets
+set user_id = (select id from auth.users where email = 'あなたのメールアドレス')
+where user_id is null;
+```
 
 ### 2. ローカルで動かす（任意）
 
@@ -66,12 +86,19 @@ src/
   App.tsx                     URL の # を見てページを切り替える
   pages/
     HomePage.tsx              学習セットの一覧
+    LoginPage.tsx             ログイン・新規登録
     NewSetPage.tsx            学習セットを作る
-    SetPage.tsx               学習セットの中身・学習形式の選択
+    EditSetPage.tsx           学習セットを編集する
+    SetPage.tsx               学習セットの中身・学習形式の選択・削除
     FlashcardsPage.tsx        カードで学ぶ
     LoadStatus.tsx            読み込み中・失敗・見つからないの表示
+  components/
+    SetEditor.tsx             入力フォーム（作る・編集で共通）。ドラッグと ↑↓ で並べ替え
   lib/
-    studySet.ts               型と、作成フォームの検証・整形（純粋な関数）
+    auth.ts                   ログインの窓口（Supabase 版とテスト用）
+    useSession.ts             ログインしているかを画面で使うフック
+    reorder.ts                並べ替えの計算（純粋な関数）
+    studySet.ts               型と、作成・編集フォームの検証・整形（純粋な関数）
     deck.ts                   カード学習の状態と操作（純粋な関数）
     router.ts                 URL と画面の対応（純粋な関数）
     studySetRepository.ts     保存先とのやり取り（Supabase 版とテスト用のメモリ版）
