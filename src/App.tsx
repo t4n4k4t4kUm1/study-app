@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NewSetPage } from './pages/NewSetPage'
 import { SetPage } from './pages/SetPage'
+import { TypingPage } from './pages/TypingPage'
 
 type Props = { repository: StudySetRepository | null; auth: AuthClient | null }
 
@@ -80,6 +81,8 @@ function Page({ route, repository }: { route: Route; repository: StudySetReposit
       return <FlashcardsPage key={route.id} repository={repository} id={route.id} />
     case 'edit':
       return <EditSetPage key={route.id} repository={repository} id={route.id} />
+    case 'typing':
+      return <TypingPage key={route.id} repository={repository} id={route.id} />
     case 'notFound':
       return (
         <section className="notice">

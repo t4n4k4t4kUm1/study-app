@@ -1,8 +1,9 @@
 // 1つの学習セットの中身。ここから学習の形式を選んだり、編集・削除したりする。
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
+import { formatJst, MODE_LABELS, percent, type StudySessionSummary } from '../lib/studySession'
 import { navigate } from '../lib/useHashRoute'
 import { useStudySet } from '../lib/useStudySet'
 import { LoadStatus } from './LoadStatus'
@@ -32,7 +33,13 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
           <span className="mode-name">カード</span>
           <span className="mode-desc">めくって覚える</span>
         </a>
+        <a className="mode" href={href({ name: 'typing', id: set.id })}>
+          <span className="mode-name">入力</span>
+          <span className="mode-desc">キーボードで答える</span>
+        </a>
       </div>
+
+      <RecentSessions setId={set.id} repository={repository} />
 
       <h2>カード一覧</h2>
       <ol className="card-list" aria-label="カード一覧">
@@ -45,6 +52,45 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
       </ol>
 
       <DeleteSet set={set} repository={repository} />
+    </>
+  )
+}
+
+// 入力で学んだ最近の記録（新しい順に5回分）
+function RecentSessions({ setId, repository }: { setId: string; repository: StudySetRepository }) {
+  const [sessions, setSessions] = useState<StudySessionSummary[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    repository
+      .listRecentSessions(setId, 5)
+      .then((rows) => !cancelled && setSessions(rows))
+      .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : '記録を読み込めませんでした'))
+    return () => {
+      cancelled = true
+    }
+  }, [setId, repository])
+
+  if (error) return <p className="error">{error}</p>
+  if (!sessions || sessions.length === 0) return null
+  return (
+    <>
+      <h2>最近の記録</h2>
+      <ul className="session-list" aria-label="最近の記録">
+        {sessions.map((s) => (
+          <li key={s.id}>
+            <span className="session-when">{formatJst(s.finished_at)}</span>
+            <span className="session-mode">
+              入力・{MODE_LABELS[s.mode]}
+              {s.direction === 'reverse' ? '・逆向き' : ''}
+            </span>
+            <span className="session-score">
+              {s.first_round_correct} / {s.first_round_total}（{percent(s.first_round_correct, s.first_round_total)}%）
+            </span>
+          </li>
+        ))}
+      </ul>
     </>
   )
 }

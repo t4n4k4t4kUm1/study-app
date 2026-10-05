@@ -8,6 +8,8 @@
   --accent-soft: #e6edf9;
   --error: #b42318;
   --error-soft: #fdecea;
+  --good: #1a7f37;
+  --good-soft: #e8f5ec;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 6%);
   color-scheme: light;
 }
@@ -22,6 +24,8 @@
     --accent-soft: #263552;
     --error: #ff8a80;
     --error-soft: #432523;
+    --good: #6bd38a;
+    --good-soft: #1c3324;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
     color-scheme: dark;
   }
@@ -605,4 +609,214 @@ input[type='checkbox'] {
   background: var(--accent-soft);
   color: var(--text);
   font-size: 0.9rem;
+}
+
+/* ---------- 入力で学ぶ ---------- */
+.mode-choice {
+  margin: 16px 0 0;
+  gap: 8px;
+}
+.mode-choice legend {
+  font-weight: 700;
+  padding: 0 4px;
+}
+.mode-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.mode-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.mode-option input {
+  margin-top: 4px;
+  width: auto;
+  accent-color: var(--accent);
+}
+.mode-option-name {
+  display: block;
+  font-weight: 700;
+}
+.mode-option-desc {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.typing-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 14px;
+}
+.typing-options .check {
+  margin-right: 0;
+}
+.start-button {
+  margin-top: 16px;
+  min-width: 200px;
+}
+.typing-card {
+  position: relative;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.typing-card .face-label {
+  top: 10px;
+}
+.typing-prompt {
+  margin: 0;
+  padding: 16px 8px 0;
+  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  font-weight: 600;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.typing-input,
+.typing-feedback {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+.typing-input input,
+.typing-feedback input {
+  font-size: 1.15rem;
+  padding: 12px 14px;
+}
+.typing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.typing-feedback {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+}
+.typing-feedback.correct {
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+.typing-feedback.incorrect {
+  border-color: var(--error);
+  background: var(--error-soft);
+}
+.verdict {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+.typing-feedback.correct .verdict {
+  color: var(--good);
+}
+.typing-feedback.incorrect .verdict {
+  color: var(--error);
+}
+.answers {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+.answers dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding-top: 2px;
+}
+.answers dd {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.answers .given {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.answers .expected {
+  font-weight: 700;
+}
+.round {
+  color: var(--accent);
+  font-weight: 600;
+}
+.typing-result {
+  text-align: center;
+}
+.typing-result h1 {
+  margin: 0;
+}
+.score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 12px 0 4px;
+}
+.score-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.score-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.score-percent {
+  color: var(--accent);
+  font-weight: 700;
+}
+.save-status {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.save-status.error {
+  color: var(--error);
+}
+.mistakes .given {
+  display: block;
+  text-decoration: line-through;
+}
+.mistakes .expected {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+.typing .deck-finished-actions {
+  justify-content: flex-start;
+}
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.session-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.session-list li:first-child {
+  border-top: none;
+}
+.session-when {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.session-score {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }

@@ -11,6 +11,7 @@ describe('parseRoute', () => {
     [`#/sets/${id}`, { name: 'set', id }],
     [`#/sets/${id}/cards`, { name: 'cards', id }],
     [`#/sets/${id}/edit`, { name: 'edit', id }],
+    [`#/sets/${id}/type`, { name: 'typing', id }],
     [`#/sets/${id.toUpperCase()}`, { name: 'set', id }],
     ['#/sets/abc', { name: 'notFound' }], // id の形が違うものは DB に問い合わせる前に弾く
     ['#/unknown', { name: 'notFound' }],

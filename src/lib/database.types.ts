@@ -67,6 +67,64 @@ export type Database = {
           },
         ]
       }
+      study_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          set_id: string
+          mode: string
+          direction: string
+          started_at: string
+          finished_at: string
+          first_round_correct: number
+          first_round_total: number
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          set_id: string
+          mode: string
+          direction: string
+          started_at: string
+          finished_at?: string
+          first_round_correct: number
+          first_round_total: number
+        }
+        Update: Partial<Database['public']['Tables']['study_sessions']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'study_sessions_set_id_fkey'
+            columns: ['set_id']
+            isOneToOne: false
+            referencedRelation: 'study_sets'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      answer_logs: {
+        Row: {
+          id: string
+          session_id: string
+          card_id: string
+          round: number
+          given: string
+          judged_correct: boolean
+          overridden: boolean
+          answered_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          card_id: string
+          round: number
+          given: string
+          judged_correct: boolean
+          overridden?: boolean
+          answered_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['answer_logs']['Insert']>
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: {
@@ -77,6 +135,10 @@ export type Database = {
       update_study_set: {
         Args: { p_id: string; p_title: string; p_description: string | null; p_cards: Json }
         Returns: undefined
+      }
+      record_study_session: {
+        Args: { p_set_id: string; p_mode: string; p_direction: string; p_started_at: string; p_attempts: Json }
+        Returns: string
       }
     }
     Enums: { [_ in never]: never }
