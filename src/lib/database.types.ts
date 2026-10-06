@@ -101,6 +101,12 @@ export type Database = {
           },
         ]
       }
+      scratch_notes: {
+        Row: { user_id: string; body: string; updated_at: string }
+        Insert: { user_id?: string; body?: string; updated_at?: string }
+        Update: { user_id?: string; body?: string; updated_at?: string }
+        Relationships: []
+      }
       answer_logs: {
         Row: {
           id: string
@@ -135,6 +141,10 @@ export type Database = {
       update_study_set: {
         Args: { p_id: string; p_title: string; p_description: string | null; p_cards: Json }
         Returns: undefined
+      }
+      save_scratch_note: {
+        Args: { p_body: string; p_base_updated_at: string | null }
+        Returns: string
       }
       record_study_session: {
         Args: { p_set_id: string; p_mode: string; p_direction: string; p_started_at: string; p_attempts: Json }

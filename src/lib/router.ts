@@ -1,6 +1,7 @@
 // 画面の切り替え（ルーティング）。URL の # より後ろで、どの画面を出すかを決める。
 //   #/                 学習セットの一覧
 //   #/new              学習セットを作る
+//   #/memo             掃きだめメモ
 //   #/sets/<id>        学習セットの中身
 //   #/sets/<id>/cards  カードで学ぶ
 //   #/sets/<id>/edit   学習セットを編集
@@ -12,6 +13,7 @@
 export type Route =
   | { name: 'home' }
   | { name: 'new' }
+  | { name: 'memo' }
   | { name: 'set'; id: string }
   | { name: 'cards'; id: string }
   | { name: 'edit'; id: string }
@@ -29,6 +31,7 @@ export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '') || '/'
   if (path === '/') return { name: 'home' }
   if (path === '/new') return { name: 'new' }
+  if (path === '/memo') return { name: 'memo' }
   const set = SET_PATH.exec(path)
   if (set) return { name: 'set', id: set[1].toLowerCase() }
   const cards = CARDS_PATH.exec(path)
@@ -47,6 +50,8 @@ export function href(route: Exclude<Route, { name: 'notFound' }>): string {
       return '#/'
     case 'new':
       return '#/new'
+    case 'memo':
+      return '#/memo'
     case 'set':
       return `#/sets/${route.id}`
     case 'cards':

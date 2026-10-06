@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
 import type { StudySet } from './lib/studySet'
+import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
 
 const SET_ID = '3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b'
@@ -30,7 +31,13 @@ beforeEach(() => {
 describe('学習セットを作る', () => {
   it('タイトルとカードを入れて作成すると、セットの画面に移り、一覧にも出る', async () => {
     const user = userEvent.setup()
-    render(<App repository={createMemoryStudySetRepository()} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('link', { name: '＋ 新しいセット' }))
     await user.type(await screen.findByLabelText('タイトル'), '線形代数 第3章')
@@ -55,7 +62,13 @@ describe('学習セットを作る', () => {
   it('最後の答えで Tab を押すとカードが増え、その問題欄に移る', async () => {
     const user = userEvent.setup()
     window.location.hash = '#/new'
-    render(<App repository={createMemoryStudySetRepository()} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByLabelText('3枚目の答え'))
     await user.tab()
@@ -65,7 +78,13 @@ describe('学習セットを作る', () => {
   it('答えが空のカードがあると作成せず、何枚目かを伝える', async () => {
     const user = userEvent.setup()
     window.location.hash = '#/new'
-    render(<App repository={createMemoryStudySetRepository()} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.type(await screen.findByLabelText('タイトル'), 'テスト')
     await user.type(screen.getByLabelText('1枚目の問題'), '問題だけ')
@@ -80,7 +99,13 @@ describe('カードで学ぶ', () => {
   it('クリックでめくり、次へで次のカード。最後まで行くと終了画面', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}/cards`
-    render(<App repository={createMemoryStudySetRepository([sample])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     const card = await screen.findByRole('button', { name: /問題\s*먹다/ })
     expect(screen.getByText('1 / 2')).toBeInTheDocument()
@@ -99,7 +124,13 @@ describe('カードで学ぶ', () => {
   it('キーボードで操作できる（Space めくる、→ 次へ、← 前へ）', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}/cards`
-    render(<App repository={createMemoryStudySetRepository([sample])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
     await screen.findByRole('button', { name: /問題\s*먹다/ })
 
     await user.keyboard(' ')
@@ -113,7 +144,13 @@ describe('カードで学ぶ', () => {
   it('「答えを先に出す」で表裏が入れ替わる', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}/cards`
-    render(<App repository={createMemoryStudySetRepository([sample])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
     await screen.findByRole('button', { name: /問題\s*먹다/ })
 
     await user.click(screen.getByLabelText('答えを先に出す'))
@@ -122,12 +159,32 @@ describe('カードで学ぶ', () => {
 
   it('存在しないセットは「見つかりません」', async () => {
     window.location.hash = '#/sets/00000000-0000-4000-8000-000000000000/cards'
-    render(<App repository={createMemoryStudySetRepository([sample])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
     expect(await screen.findByRole('heading', { name: '学習セットが見つかりません' })).toBeInTheDocument()
   })
 })
 
 it('保存先が未設定なら、設定の案内を出す', () => {
-  render(<App repository={null} auth={null} />)
+  render(<App repository={null} auth={null} notes={createMemoryScratchNoteRepository()} />)
   expect(screen.getByRole('alert')).toHaveTextContent('VITE_SUPABASE_URL')
+})
+
+it('ヘッダーの「メモ」から掃きだめメモを開ける', async () => {
+  const user = userEvent.setup()
+  render(
+    <App
+      repository={createMemoryStudySetRepository()}
+      auth={signedIn()}
+      notes={createMemoryScratchNoteRepository({ body: '思いついたこと', updatedAt: null })}
+    />,
+  )
+  await user.click(await screen.findByRole('link', { name: 'メモ' }))
+  expect(await screen.findByRole('heading', { name: '掃きだめメモ' })).toBeInTheDocument()
+  expect(screen.getByLabelText('掃きだめメモ')).toHaveValue('思いついたこと')
 })

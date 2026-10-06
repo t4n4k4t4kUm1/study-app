@@ -55,7 +55,7 @@ a {
 .app {
   max-width: 760px;
   margin: 0 auto;
-  padding: 0 16px 64px;
+  padding: 0 16px 96px; /* 下は右下の「メモ」ボタンに隠れない分あけておく */
 }
 .site-header {
   display: flex;
@@ -71,6 +71,20 @@ a {
   color: var(--text);
   font-weight: 700;
   text-decoration: none;
+}
+.main-nav {
+  display: flex;
+  gap: 14px;
+  margin-right: auto;
+  margin-left: 16px;
+  font-size: 0.9rem;
+}
+.main-nav a {
+  color: var(--text);
+  text-decoration: none;
+}
+.main-nav a:hover {
+  color: var(--accent);
 }
 .account {
   display: flex;
@@ -362,8 +376,13 @@ input[type='checkbox'] {
   min-width: 160px;
 }
 @media (max-width: 560px) {
-  .brand-sub {
+  .brand-sub,
+  .account-email {
     display: none;
+  }
+  .main-nav {
+    margin-left: 4px;
+    gap: 10px;
   }
   /* スマホでは問題と答えを縦に並べ、番号とボタンを上の段にまとめる */
   .card-row {
@@ -819,4 +838,132 @@ input[type='checkbox'] {
   margin-left: auto;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 掃きだめメモ ---------- */
+.notes .page-head {
+  flex-wrap: wrap;
+}
+.save-badge {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.save-badge.is-dirty,
+.save-badge.is-saving {
+  color: var(--accent);
+}
+.save-badge.is-error,
+.save-badge.is-conflict {
+  color: var(--error);
+}
+.notes-body {
+  display: block;
+  width: 100%;
+  min-height: 60vh;
+  margin-top: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  line-height: 1.75;
+  resize: vertical;
+  field-sizing: fixed;
+}
+.notes-count {
+  text-align: right;
+}
+.conflict {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1.5px solid var(--error);
+  border-radius: 12px;
+  background: var(--error-soft);
+}
+.conflict p {
+  margin: 0 0 10px;
+}
+
+/* ---------- クイックメモ ---------- */
+.quick-memo-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--surface);
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+.quick-memo-button[hidden] {
+  display: none;
+}
+.quick-memo-button:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+.quick-memo {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  width: min(420px, 100vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px 10px;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.quick-memo-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.quick-memo-title {
+  font-weight: 700;
+  margin-right: auto;
+}
+.quick-memo-head a {
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.quick-memo .notes {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.quick-memo .notes-body {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg);
+}
+.quick-memo .notes-count,
+.quick-memo .hint {
+  margin: 4px 0 0;
+}
+.quick-memo .conflict .button {
+  padding: 8px 12px;
+}
+@media (max-width: 560px) {
+  /* スマホでは下から出す */
+  .quick-memo {
+    top: auto;
+    left: 0;
+    width: 100%;
+    height: 75vh;
+    border-left: none;
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+  }
+  .quick-memo-button {
+    right: 16px;
+    bottom: 16px;
+  }
+  .quick-memo .esc-hint {
+    display: none; /* スマホには Esc キーがない */
+  }
 }

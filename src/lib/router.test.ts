@@ -8,6 +8,7 @@ describe('parseRoute', () => {
     ['', { name: 'home' }],
     ['#/', { name: 'home' }],
     ['#/new', { name: 'new' }],
+    ['#/memo', { name: 'memo' }],
     [`#/sets/${id}`, { name: 'set', id }],
     [`#/sets/${id}/cards`, { name: 'cards', id }],
     [`#/sets/${id}/edit`, { name: 'edit', id }],

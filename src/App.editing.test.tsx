@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
 import type { StudySet } from './lib/studySet'
+import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
 
 const SET_ID = '3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b'
@@ -33,7 +34,9 @@ describe('ログイン', () => {
   it('ログインしていなければログイン画面。正しいパスワードで入ると一覧が出る', async () => {
     const user = userEvent.setup()
     const auth = createMemoryAuth({ users: { 'me@example.com': 'secret-pass' } })
-    render(<App repository={createMemoryStudySetRepository()} auth={auth} />)
+    render(
+      <App repository={createMemoryStudySetRepository()} auth={auth} notes={createMemoryScratchNoteRepository()} />,
+    )
 
     await screen.findByRole('heading', { name: 'ログイン' })
     await user.type(screen.getByLabelText('メールアドレス'), 'me@example.com')
@@ -50,7 +53,13 @@ describe('ログイン', () => {
 
   it('アカウントを作るとそのままログインでき、ログアウトするとログイン画面に戻る', async () => {
     const user = userEvent.setup()
-    render(<App repository={createMemoryStudySetRepository()} auth={createMemoryAuth()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={createMemoryAuth()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('button', { name: 'はじめての方はアカウントを作る' }))
     await user.type(screen.getByLabelText('メールアドレス'), 'new@example.com')
@@ -65,7 +74,11 @@ describe('ログイン', () => {
   it('確認メールが必要な設定なら、そのことを伝える', async () => {
     const user = userEvent.setup()
     render(
-      <App repository={createMemoryStudySetRepository()} auth={createMemoryAuth({ confirmationRequired: true })} />,
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={createMemoryAuth({ confirmationRequired: true })}
+        notes={createMemoryScratchNoteRepository()}
+      />,
     )
     await user.click(await screen.findByRole('button', { name: 'はじめての方はアカウントを作る' }))
     await user.type(screen.getByLabelText('メールアドレス'), 'new@example.com')
@@ -79,7 +92,13 @@ describe('学習セットを編集する', () => {
   it('答えを直し、カードを足し、↑で並べ替えて保存すると、セットの画面に反映される', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}`
-    render(<App repository={createMemoryStudySetRepository([sample()])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('link', { name: '編集' }))
     const answer1 = await screen.findByLabelText('1枚目の答え')
@@ -100,7 +119,13 @@ describe('学習セットを編集する', () => {
   it('カードを削除して保存すると、そのカードは消える', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}/edit`
-    render(<App repository={createMemoryStudySetRepository([sample()])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('button', { name: '2枚目を削除' }))
     await user.click(screen.getByRole('button', { name: '保存する' }))
@@ -110,7 +135,13 @@ describe('学習セットを編集する', () => {
 
   it('一番上のカードは「上へ」、一番下のカードは「下へ」を押せない', async () => {
     window.location.hash = `#/sets/${SET_ID}/edit`
-    render(<App repository={createMemoryStudySetRepository([sample()])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
     expect(await screen.findByRole('button', { name: '1枚目を上へ' })).toBeDisabled()
     expect(screen.getByRole('button', { name: '3枚目を下へ' })).toBeDisabled()
   })
@@ -120,7 +151,13 @@ describe('学習セットを削除する', () => {
   it('確認のあと削除すると一覧に戻り、セットは消えている', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}`
-    render(<App repository={createMemoryStudySetRepository([sample()])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('button', { name: 'このセットを削除' }))
     const confirm = screen.getByRole('group', { name: '削除の確認' })
@@ -133,7 +170,13 @@ describe('学習セットを削除する', () => {
   it('「やめる」を押せば削除しない', async () => {
     const user = userEvent.setup()
     window.location.hash = `#/sets/${SET_ID}`
-    render(<App repository={createMemoryStudySetRepository([sample()])} auth={signedIn()} />)
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
 
     await user.click(await screen.findByRole('button', { name: 'このセットを削除' }))
     await user.click(screen.getByRole('button', { name: 'やめる' }))
