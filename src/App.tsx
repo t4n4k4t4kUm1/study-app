@@ -1,16 +1,13 @@
 // 画面全体。ログインしていなければログイン画面を、していれば URL の # に合わせたページを出す。
+import { AnimatePresence, motion, MotionConfig } from 'motion/react'
+import { pageVariants, spring } from './components/motion'
 import { QuickMemo } from './components/QuickMemo'
 import type { AuthClient, Session } from './lib/auth'
-import type { BlackjackRepository } from './lib/blackjackRepository'
-import type { CreditRepository } from './lib/creditRepository'
-import { formatCredits } from './lib/credits'
 import { href, type Route } from './lib/router'
 import type { ScratchNoteRepository } from './lib/scratchNoteRepository'
 import type { StudySetRepository } from './lib/studySetRepository'
-import { useCreditBalance } from './lib/useCreditBalance'
 import { useHashRoute } from './lib/useHashRoute'
 import { useSession } from './lib/useSession'
-import { BlackjackPage } from './pages/BlackjackPage'
 import { EditSetPage } from './pages/EditSetPage'
 import { FlashcardsPage } from './pages/FlashcardsPage'
 import { HomePage } from './pages/HomePage'
@@ -24,23 +21,36 @@ type Props = {
   repository: StudySetRepository | null
   auth: AuthClient | null
   notes: ScratchNoteRepository | null
-  credits: CreditRepository | null
-  casino: BlackjackRepository | null
 }
 
-export default function App({ repository, auth, notes, credits, casino }: Props) {
+export default function App({ repository, auth, notes }: Props) {
   return (
-    <div className="app">
-      {repository && auth && notes && credits && casino ? (
-        <Main repository={repository} auth={auth} notes={notes} credits={credits} casino={casino} />
-      ) : (
-        <>
-          <Header session={null} />
-          <main>
-            <SetupNotice />
-          </main>
-        </>
-      )}
+    // reducedMotion="user"：OS で「動きを減らす」にしている人には、位置や大きさが変わる動きを止める
+    <MotionConfig reducedMotion="user">
+      <Backdrop />
+      <div className="app">
+        {repository && auth && notes ? (
+          <Main repository={repository} auth={auth} notes={notes} />
+        ) : (
+          <>
+            <Header session={null} route={null} />
+            <main>
+              <SetupNotice />
+            </main>
+          </>
+        )}
+      </div>
+    </MotionConfig>
+  )
+}
+
+// 背景：色のついた光の玉が、ゆっくり漂う（CSS のアニメーション。ガラスのパネル越しにぼんやり透ける）
+function Backdrop() {
+  return (
+    <div className="backdrop" aria-hidden="true">
+      <span className="orb orb-a" />
+      <span className="orb orb-b" />
+      <span className="orb orb-c" />
     </div>
   )
 }
@@ -49,60 +59,50 @@ function Main({
   repository,
   auth,
   notes,
-  credits,
-  casino,
 }: {
   repository: StudySetRepository
   auth: AuthClient
   notes: ScratchNoteRepository
-  credits: CreditRepository
-  casino: BlackjackRepository
 }) {
   const route = useHashRoute()
   const session = useSession(auth)
-  const balance = useCreditBalance(credits, session.status === 'signedIn' ? session.session.userId : null)
+  const signedIn = session.status === 'signedIn' ? session.session : null
+  // 画面ごとの名札。これが変わると、前の画面が消えてから次の画面が出てくる
+  const pageKey = signedIn ? `${signedIn.userId}:${routeKey(route)}` : session.status
+
   return (
     <>
-      <Header
-        session={session.status === 'signedIn' ? session.session : null}
-        credits={balance}
-        onSignOut={() => auth.signOut().catch(() => undefined)}
-      />
+      <Header session={signedIn} route={route} onSignOut={() => auth.signOut().catch(() => undefined)} />
       <main>
-        {session.status === 'loading' && <p className="muted">読み込み中…</p>}
-        {session.status === 'signedOut' && <LoginPage auth={auth} />}
-        {/* key にユーザーの id を渡すと、別の人がログインしたときに画面の状態がすべて作り直される */}
-        {session.status === 'signedIn' && (
-          <Page
-            key={session.session.userId}
-            route={route}
-            repository={repository}
-            notes={notes}
-            casino={casino}
-            balance={balance.balance}
-            onCreditsChange={balance.refresh}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={pageKey} variants={pageVariants} initial="initial" animate="enter" exit="exit">
+            {session.status === 'loading' && <p className="muted loading">読み込み中…</p>}
+            {session.status === 'signedOut' && <LoginPage auth={auth} />}
+            {signedIn && <Page route={route} repository={repository} notes={notes} />}
+          </motion.div>
+        </AnimatePresence>
       </main>
       {/* どの画面でも右下に「メモ」ボタン（メモの画面そのものでは出さない） */}
-      {session.status === 'signedIn' && route.name !== 'memo' && (
-        <QuickMemo key={session.session.userId} notes={notes} />
-      )}
+      {signedIn && route.name !== 'memo' && <QuickMemo key={signedIn.userId} notes={notes} />}
     </>
   )
 }
 
-type CreditDisplay = { balance: number | null; error: boolean }
+function routeKey(route: Route): string {
+  return 'id' in route ? `${route.name}/${route.id}` : route.name
+}
 
+// ヘッダー：すりガラスの帯。今いる場所のメニューの下に、光る札がすべって移動する
 function Header({
   session,
-  credits,
+  route,
   onSignOut,
 }: {
   session: Session | null
-  credits?: CreditDisplay
+  route: Route | null
   onSignOut?: () => void
 }) {
+  const section = route?.name === 'memo' ? 'memo' : 'sets'
   return (
     <header className="site-header">
       <a href="#/" className="brand">
@@ -110,14 +110,16 @@ function Header({
       </a>
       {session && (
         <nav className="main-nav" aria-label="メニュー">
-          <a href={href({ name: 'home' })}>学習セット</a>
-          <a href={href({ name: 'memo' })}>メモ</a>
-          <a href={href({ name: 'blackjack' })}>カジノ</a>
+          <NavLink href={href({ name: 'home' })} active={section === 'sets'}>
+            学習セット
+          </NavLink>
+          <NavLink href={href({ name: 'memo' })} active={section === 'memo'}>
+            メモ
+          </NavLink>
         </nav>
       )}
       {session && (
         <div className="account">
-          {credits && <CreditBalance {...credits} />}
           <span className="account-email">{session.email}</span>
           <button type="button" className="link-button" onClick={onSignOut}>
             ログアウト
@@ -128,15 +130,13 @@ function Header({
   )
 }
 
-// 右上の「所持クレジット」。読み込み中は「…」、読めなかったら「—」
-function CreditBalance({ balance, error }: CreditDisplay) {
-  const text = balance !== null ? formatCredits(balance) : error ? '—' : '…'
+function NavLink({ href, active, children }: { href: string; active: boolean; children: string }) {
   return (
-    <span className="credit-balance" title={error ? 'クレジットを読み込めませんでした' : '所持クレジット'}>
-      <span className="coin" aria-hidden="true" />
-      <span className="visually-hidden">所持クレジット </span>
-      <span className="credit-amount">{text}</span>
-    </span>
+    <a href={href} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
+      {/* layoutId が同じ部品は、別の場所に出ても「同じもの」として、前の位置からすべって移動する */}
+      {active && <motion.span layoutId="nav-pill" className="nav-pill" transition={spring} />}
+      <span className="nav-label">{children}</span>
+    </a>
   )
 }
 
@@ -144,16 +144,10 @@ function Page({
   route,
   repository,
   notes,
-  casino,
-  balance,
-  onCreditsChange,
 }: {
   route: Route
   repository: StudySetRepository
   notes: ScratchNoteRepository
-  casino: BlackjackRepository
-  balance: number | null
-  onCreditsChange: () => void
 }) {
   switch (route.name) {
     case 'home':
@@ -162,17 +156,14 @@ function Page({
       return <NewSetPage repository={repository} />
     case 'memo':
       return <NotesPage notes={notes} />
-    case 'blackjack':
-      return <BlackjackPage casino={casino} balance={balance} onCreditsChange={onCreditsChange} />
-    // key に id を渡すと、別のセットに移ったときにページの状態が作り直される
     case 'set':
-      return <SetPage key={route.id} repository={repository} id={route.id} />
+      return <SetPage repository={repository} id={route.id} />
     case 'cards':
-      return <FlashcardsPage key={route.id} repository={repository} id={route.id} />
+      return <FlashcardsPage repository={repository} id={route.id} />
     case 'edit':
-      return <EditSetPage key={route.id} repository={repository} id={route.id} />
+      return <EditSetPage repository={repository} id={route.id} />
     case 'typing':
-      return <TypingPage key={route.id} repository={repository} id={route.id} onCreditsChange={onCreditsChange} />
+      return <TypingPage repository={repository} id={route.id} />
     case 'notFound':
       return (
         <section className="notice">

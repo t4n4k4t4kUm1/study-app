@@ -1,5 +1,7 @@
 // 1つの学習セットの中身。ここから学習の形式を選んだり、編集・削除したりする。
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { itemVariants, listVariants, softSpring } from '../components/motion'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
@@ -28,28 +30,28 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
       <p className="meta">{set.cards.length}枚</p>
 
       <h2>学習する</h2>
-      <div className="modes">
-        <a className="mode" href={href({ name: 'cards', id: set.id })}>
+      <motion.div className="modes" variants={listVariants} initial="hidden" animate="show">
+        <motion.a className="mode" href={href({ name: 'cards', id: set.id })} variants={itemVariants}>
           <span className="mode-name">カード</span>
           <span className="mode-desc">めくって覚える</span>
-        </a>
-        <a className="mode" href={href({ name: 'typing', id: set.id })}>
+        </motion.a>
+        <motion.a className="mode" href={href({ name: 'typing', id: set.id })} variants={itemVariants}>
           <span className="mode-name">入力</span>
           <span className="mode-desc">キーボードで答える</span>
-        </a>
-      </div>
+        </motion.a>
+      </motion.div>
 
       <RecentSessions setId={set.id} repository={repository} />
 
       <h2>カード一覧</h2>
-      <ol className="card-list" aria-label="カード一覧">
+      <motion.ol className="card-list" aria-label="カード一覧" variants={listVariants} initial="hidden" animate="show">
         {set.cards.map((c) => (
-          <li key={c.id}>
+          <motion.li key={c.id} variants={itemVariants}>
             <span className="q">{c.question}</span>
             <span className="a">{c.answer}</span>
-          </li>
+          </motion.li>
         ))}
-      </ol>
+      </motion.ol>
 
       <DeleteSet set={set} repository={repository} />
     </>
@@ -77,9 +79,15 @@ function RecentSessions({ setId, repository }: { setId: string; repository: Stud
   return (
     <>
       <h2>最近の記録</h2>
-      <ul className="session-list" aria-label="最近の記録">
+      <motion.ul
+        className="session-list"
+        aria-label="最近の記録"
+        variants={listVariants}
+        initial="hidden"
+        animate="show"
+      >
         {sessions.map((s) => (
-          <li key={s.id}>
+          <motion.li key={s.id} variants={itemVariants}>
             <span className="session-when">{formatJst(s.finished_at)}</span>
             <span className="session-mode">
               入力・{MODE_LABELS[s.mode]}
@@ -88,9 +96,9 @@ function RecentSessions({ setId, repository }: { setId: string; repository: Stud
             <span className="session-score">
               {s.first_round_correct} / {s.first_round_total}（{percent(s.first_round_correct, s.first_round_total)}%）
             </span>
-          </li>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
     </>
   )
 }
@@ -113,34 +121,49 @@ function DeleteSet({ set, repository }: { set: StudySet; repository: StudySetRep
     }
   }
 
-  if (!confirming) {
-    return (
-      <div className="danger-zone">
-        <button type="button" className="link-button danger" onClick={() => setConfirming(true)}>
-          このセットを削除
-        </button>
-      </div>
-    )
-  }
-
+  // 「削除」を押すと、確認の枠がふわっと開く（やめると閉じる）
   return (
-    <div className="danger-zone confirm" role="group" aria-label="削除の確認">
-      <p>
-        「{set.title}」とカード{set.cards.length}枚を削除します。<strong>元に戻せません。</strong>
-      </p>
-      <div className="danger-actions">
-        <button type="button" className="button danger" onClick={handleDelete} disabled={deleting}>
-          {deleting ? '削除中…' : '削除する'}
-        </button>
-        <button type="button" className="button" onClick={() => setConfirming(false)} disabled={deleting}>
-          やめる
-        </button>
-      </div>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
+    <AnimatePresence mode="wait" initial={false}>
+      {confirming ? (
+        <motion.div
+          key="confirm"
+          className="danger-zone confirm"
+          role="group"
+          aria-label="削除の確認"
+          initial={{ opacity: 0, scale: 0.96, y: -6 }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: softSpring }}
+          exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.12 } }}
+        >
+          <p>
+            「{set.title}」とカード{set.cards.length}枚を削除します。<strong>元に戻せません。</strong>
+          </p>
+          <div className="danger-actions">
+            <button type="button" className="button danger" onClick={handleDelete} disabled={deleting}>
+              {deleting ? '削除中…' : '削除する'}
+            </button>
+            <button type="button" className="button" onClick={() => setConfirming(false)} disabled={deleting}>
+              やめる
+            </button>
+          </div>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="link"
+          className="danger-zone"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <button type="button" className="link-button danger" onClick={() => setConfirming(true)}>
+            このセットを削除
+          </button>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   )
 }

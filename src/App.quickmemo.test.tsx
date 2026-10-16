@@ -4,8 +4,6 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
-import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
-import { createMemoryCreditRepository } from './lib/creditRepository'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
 
@@ -19,15 +17,7 @@ describe('クイックメモ', () => {
   it('どの画面でも右下のボタンで開き、閉じるとその場で保存される', async () => {
     const user = userEvent.setup()
     const notes = createMemoryScratchNoteRepository({ body: '前回のメモ', updatedAt: null })
-    render(
-      <App
-        repository={createMemoryStudySetRepository()}
-        auth={signedIn()}
-        notes={notes}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
-      />,
-    )
+    render(<App repository={createMemoryStudySetRepository()} auth={signedIn()} notes={notes} />)
 
     await user.click(await screen.findByRole('button', { name: 'メモを開く' }))
     const memo = await screen.findByLabelText('掃きだめメモ')
@@ -49,8 +39,6 @@ describe('クイックメモ', () => {
         repository={createMemoryStudySetRepository()}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'メモを開く' }))
@@ -66,8 +54,6 @@ describe('クイックメモ', () => {
         repository={createMemoryStudySetRepository()}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'メモを開く' }))
@@ -83,8 +69,6 @@ describe('クイックメモ', () => {
         repository={createMemoryStudySetRepository()}
         auth={createMemoryAuth()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await screen.findByRole('heading', { name: 'ログイン' })

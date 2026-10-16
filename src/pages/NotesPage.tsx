@@ -1,6 +1,8 @@
 // 掃きだめメモ：思いついたことを何でも書いておく、1人1枚の大きなメモ帳。
 // 書くのをやめて少し経つと自動で保存する。ほかの端末で先に保存されていたら、上書きせずにどうするか聞く。
+import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { shake } from '../components/motion'
 import { mergeBodies, NOTE_LIMIT, NoteConflictError } from '../lib/scratchNote'
 import type { ScratchNoteRepository } from '../lib/scratchNoteRepository'
 import { formatJst } from '../lib/studySession'
@@ -197,7 +199,12 @@ export function NotesPage({
       )}
 
       {status === 'conflict' && (
-        <div className="conflict" role="alert">
+        <motion.div
+          className="conflict"
+          role="alert"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0, ...shake }}
+        >
           <p>
             <strong>ほかの端末でこのメモが更新されていました。</strong>
             この端末の変更はまだ保存していません。どうしますか？
@@ -213,7 +220,7 @@ export function NotesPage({
           <p className="hint">
             「両方残す」：どちらの端末も後ろに書き足しただけなら、両方の追記をつなげます。途中を書き換えていた場合は、この端末の内容を区切り線の下に丸ごと足します。
           </p>
-        </div>
+        </motion.div>
       )}
       {status === 'error' && (
         <p className="error" role="alert">

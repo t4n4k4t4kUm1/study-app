@@ -5,8 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
-import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
-import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
@@ -38,8 +36,6 @@ describe('学習セットを作る', () => {
         repository={createMemoryStudySetRepository()}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -71,8 +67,6 @@ describe('学習セットを作る', () => {
         repository={createMemoryStudySetRepository()}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -89,8 +83,6 @@ describe('学習セットを作る', () => {
         repository={createMemoryStudySetRepository()}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -112,8 +104,6 @@ describe('カードで学ぶ', () => {
         repository={createMemoryStudySetRepository([sample])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -139,8 +129,6 @@ describe('カードで学ぶ', () => {
         repository={createMemoryStudySetRepository([sample])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await screen.findByRole('button', { name: /問題\s*먹다/ })
@@ -161,8 +149,6 @@ describe('カードで学ぶ', () => {
         repository={createMemoryStudySetRepository([sample])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await screen.findByRole('button', { name: /問題\s*먹다/ })
@@ -178,8 +164,6 @@ describe('カードで学ぶ', () => {
         repository={createMemoryStudySetRepository([sample])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
-        credits={createMemoryCreditRepository()}
-        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     expect(await screen.findByRole('heading', { name: '学習セットが見つかりません' })).toBeInTheDocument()
@@ -187,15 +171,7 @@ describe('カードで学ぶ', () => {
 })
 
 it('保存先が未設定なら、設定の案内を出す', () => {
-  render(
-    <App
-      repository={null}
-      auth={null}
-      notes={createMemoryScratchNoteRepository()}
-      credits={createMemoryCreditRepository()}
-      casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
-    />,
-  )
+  render(<App repository={null} auth={null} notes={createMemoryScratchNoteRepository()} />)
   expect(screen.getByRole('alert')).toHaveTextContent('VITE_SUPABASE_URL')
 })
 
@@ -206,8 +182,6 @@ it('ヘッダーの「メモ」から掃きだめメモを開ける', async () =
       repository={createMemoryStudySetRepository()}
       auth={signedIn()}
       notes={createMemoryScratchNoteRepository({ body: '思いついたこと', updatedAt: null })}
-      credits={createMemoryCreditRepository()}
-      casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
     />,
   )
   await user.click(await screen.findByRole('link', { name: 'メモ' }))

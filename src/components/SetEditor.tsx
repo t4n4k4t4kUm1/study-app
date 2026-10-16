@@ -1,8 +1,10 @@
 // 学習セットの入力フォーム。「作る」画面と「編集」画面の両方で使う共通の部品。
 // タイトル・説明と、問題・答えの組（カード）を何枚でも入力でき、ドラッグか ↑↓ ボタンで並べ替えられる。
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
 import { moveItem, shouldMove } from '../lib/reorder'
 import { LIMITS, parseSetDraft, type CardDraft, type NewStudySet } from '../lib/studySet'
+import { spring } from './motion'
 
 // key：React が行を見分けるための番号。行を消したり並べ替えたりしても入力内容がずれないように、
 // 何番目か（添字）ではなく、行ごとに固有の番号を使う
@@ -169,97 +171,106 @@ export function SetEditor({ heading, backLink, initial, submitLabel, onSubmit }:
         カード<span className="count">{filledCount}枚</span>
       </h2>
       <ol className="card-rows">
-        {rows.map((row, i) => {
-          const n = i + 1
-          const invalid = error?.cardIndex === i
-          const isLast = i === rows.length - 1
-          return (
-            <li
-              key={row.key}
-              ref={(el) => {
-                if (el) rowRefs.current.set(row.key, el)
-                else rowRefs.current.delete(row.key)
-              }}
-              className={`card-row${invalid ? ' invalid' : ''}${draggingKey === row.key ? ' dragging' : ''}`}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDrop={handleDrop}
-            >
-              <div className="card-row-head">
-                {/* つまみ：ここをつかんでドラッグする。キーボードや画面読み上げでは ↑↓ ボタンを使う */}
-                <span
-                  className="drag-handle"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, row.key)}
-                  onDragEnd={endDrag}
-                  title="ドラッグして並べ替え"
-                  aria-hidden="true"
-                >
-                  ⠿
-                </span>
-                <span className="card-no">{n}</span>
-              </div>
-              <label className="field">
-                問題
-                <textarea
-                  ref={(el) => {
-                    if (el) questionRefs.current.set(row.key, el)
-                    else questionRefs.current.delete(row.key)
-                  }}
-                  aria-label={`${n}枚目の問題`}
-                  aria-invalid={invalid || undefined}
-                  value={row.question}
-                  onChange={(e) => updateRow(row.key, 'question', e.target.value)}
-                  rows={1}
-                  maxLength={LIMITS.question}
-                />
-              </label>
-              <label className="field">
-                答え
-                <textarea
-                  aria-label={`${n}枚目の答え`}
-                  aria-invalid={invalid || undefined}
-                  value={row.answer}
-                  onChange={(e) => updateRow(row.key, 'answer', e.target.value)}
-                  onKeyDown={(e) => handleAnswerKeyDown(e, isLast)}
-                  rows={1}
-                  maxLength={LIMITS.answer}
-                />
-              </label>
-              <div className="row-actions">
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={() => moveRow(i, i - 1)}
-                  disabled={i === 0}
-                  aria-label={`${n}枚目を上へ`}
-                  title="上へ"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={() => moveRow(i, i + 1)}
-                  disabled={isLast}
-                  aria-label={`${n}枚目を下へ`}
-                  title="下へ"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  className="icon-button remove"
-                  onClick={() => removeRow(row.key)}
-                  disabled={rows.length === 1}
-                  aria-label={`${n}枚目を削除`}
-                  title="このカードを削除"
-                >
-                  ×
-                </button>
-              </div>
-            </li>
-          )
-        })}
+        {/* initial={false}：開いたときに並んでいるカードは動かさない。追加・削除・並べ替えのときだけ動く */}
+        <AnimatePresence initial={false}>
+          {rows.map((row, i) => {
+            const n = i + 1
+            const invalid = error?.cardIndex === i
+            const isLast = i === rows.length - 1
+            return (
+              // layout：並び順が変わったら、今の位置から新しい位置へ滑らかに動く（ドラッグ中も）
+              <motion.li
+                key={row.key}
+                layout="position"
+                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                transition={spring}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(row.key, el)
+                  else rowRefs.current.delete(row.key)
+                }}
+                className={`card-row${invalid ? ' invalid' : ''}${draggingKey === row.key ? ' dragging' : ''}`}
+                onDragOver={(e) => handleDragOver(e, i)}
+                onDrop={handleDrop}
+              >
+                <div className="card-row-head">
+                  {/* つまみ：ここをつかんでドラッグする。キーボードや画面読み上げでは ↑↓ ボタンを使う */}
+                  <span
+                    className="drag-handle"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, row.key)}
+                    onDragEnd={endDrag}
+                    title="ドラッグして並べ替え"
+                    aria-hidden="true"
+                  >
+                    ⠿
+                  </span>
+                  <span className="card-no">{n}</span>
+                </div>
+                <label className="field">
+                  問題
+                  <textarea
+                    ref={(el) => {
+                      if (el) questionRefs.current.set(row.key, el)
+                      else questionRefs.current.delete(row.key)
+                    }}
+                    aria-label={`${n}枚目の問題`}
+                    aria-invalid={invalid || undefined}
+                    value={row.question}
+                    onChange={(e) => updateRow(row.key, 'question', e.target.value)}
+                    rows={1}
+                    maxLength={LIMITS.question}
+                  />
+                </label>
+                <label className="field">
+                  答え
+                  <textarea
+                    aria-label={`${n}枚目の答え`}
+                    aria-invalid={invalid || undefined}
+                    value={row.answer}
+                    onChange={(e) => updateRow(row.key, 'answer', e.target.value)}
+                    onKeyDown={(e) => handleAnswerKeyDown(e, isLast)}
+                    rows={1}
+                    maxLength={LIMITS.answer}
+                  />
+                </label>
+                <div className="row-actions">
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() => moveRow(i, i - 1)}
+                    disabled={i === 0}
+                    aria-label={`${n}枚目を上へ`}
+                    title="上へ"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() => moveRow(i, i + 1)}
+                    disabled={isLast}
+                    aria-label={`${n}枚目を下へ`}
+                    title="下へ"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button remove"
+                    onClick={() => removeRow(row.key)}
+                    disabled={rows.length === 1}
+                    aria-label={`${n}枚目を削除`}
+                    title="このカードを削除"
+                  >
+                    ×
+                  </button>
+                </div>
+              </motion.li>
+            )
+          })}
+        </AnimatePresence>
       </ol>
       <button type="button" className="button add-row" onClick={addRow}>
         ＋ カードを追加

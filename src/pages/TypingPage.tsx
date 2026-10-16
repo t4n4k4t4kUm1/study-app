@@ -1,6 +1,7 @@
 // キーボードで答えて学ぶ画面。「はじめる前の設定」→「出題」→「結果」の3つの場面がある。
+import { motion } from 'motion/react'
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
-import { CREDITS_PER_SELF_JUDGED, CREDITS_PER_VERIFIED, formatCredits } from '../lib/credits'
+import { itemVariants, listVariants, shake, softSpring, spring } from '../components/motion'
 import { range, shuffle } from '../lib/deck'
 import { exactJudge, type Judge } from '../lib/judge'
 import { href } from '../lib/router'
@@ -26,12 +27,10 @@ export function TypingPage({
   repository,
   id,
   judge = exactJudge,
-  onCreditsChange,
 }: {
   repository: StudySetRepository
   id: string
   judge?: Judge // 判定係。将来ここを差し替えれば、ゆるい判定や AI の判定にできる
-  onCreditsChange?: () => void // クレジットが増えたことを知らせる先（右上の残高を読み込み直す）
 }) {
   const state = useStudySet(repository, id)
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -47,7 +46,6 @@ export function TypingPage({
       settings={settings}
       judge={judge}
       repository={repository}
-      onCreditsChange={onCreditsChange}
       onAgain={() => setRunCount((n) => n + 1)}
       onChangeSettings={() => setSettings(null)}
     />
@@ -114,14 +112,13 @@ function TypingStart({ set, onStart }: { set: StudySet; onStart: (s: Settings) =
 
 // ---------------- 出題と結果 ----------------
 
-type SaveState = { status: 'saving' } | { status: 'saved'; credits: number } | { status: 'error'; message: string }
+type SaveState = { status: 'saving' } | { status: 'saved' } | { status: 'error'; message: string }
 
 function TypingRun({
   set,
   settings,
   judge,
   repository,
-  onCreditsChange,
   onAgain,
   onChangeSettings,
 }: {
@@ -129,7 +126,6 @@ function TypingRun({
   settings: Settings
   judge: Judge
   repository: StudySetRepository
-  onCreditsChange?: () => void
   onAgain: () => void
   onChangeSettings: () => void
 }) {
@@ -162,10 +158,7 @@ function TypingRun({
         startedAt: startedAt.current,
         attempts: state.attempts,
       })
-      .then(({ credits }) => {
-        setSaveState({ status: 'saved', credits })
-        if (credits > 0) onCreditsChange?.()
-      })
+      .then(() => setSaveState({ status: 'saved' }))
       .catch((e: unknown) =>
         setSaveState({ status: 'error', message: e instanceof Error ? e.message : '記録を保存できませんでした' }),
       )
@@ -220,20 +213,30 @@ function TypingRun({
         <nav className="crumb">
           <a href={href({ name: 'set', id: set.id })}>← {set.title}</a>
         </nav>
-        <div className="typing-result panel" role="status">
+        <motion.div
+          className="typing-result panel"
+          role="status"
+          initial={{ opacity: 0, scale: 0.92, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={softSpring}
+        >
           <h1>おつかれさまでした</h1>
           <p className="score">
             <span className="score-label">1周目の正解</span>
-            <span className="score-value">
+            <motion.span
+              className="score-value"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ ...spring, delay: 0.15 }}
+            >
               {score.correct} / {score.total}
-            </span>
+            </motion.span>
             <span className="score-percent">{percent(score.correct, score.total)}%</span>
           </p>
           <p className="muted">
             {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
             {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
           </p>
-          {saveState.status === 'saved' && <EarnedCredits credits={saveState.credits} />}
           <p className={`save-status ${saveState.status}`}>
             {saveState.status === 'saving' && '記録を保存しています…'}
             {saveState.status === 'saved' && '記録を保存しました'}
@@ -243,31 +246,35 @@ function TypingRun({
                 <button type="button" className="link-button" onClick={save}>
                   もう一度保存する
                 </button>
-                <br />
-                保存できるまで、クレジットはもらえません。
               </>
             )}
           </p>
-        </div>
+        </motion.div>
 
         {mistakes.length > 0 && (
           <>
             <h2>1周目に間違えた問題</h2>
-            <ol className="card-list mistakes" aria-label="間違えた問題">
+            <motion.ol
+              className="card-list mistakes"
+              aria-label="間違えた問題"
+              variants={listVariants}
+              initial="hidden"
+              animate="show"
+            >
               {mistakes.map((a) => {
                 const c = cardsById.get(a.cardId)
                 if (!c) return null
                 return (
-                  <li key={a.cardId}>
+                  <motion.li key={a.cardId} variants={itemVariants}>
                     <span className="q">{reverse ? c.answer : c.question}</span>
                     <span className="a">
                       <span className="given">{a.given === '' ? '（わからない）' : a.given}</span>
                       <span className="expected">→ {reverse ? c.question : c.answer}</span>
                     </span>
-                  </li>
+                  </motion.li>
                 )
               })}
-            </ol>
+            </motion.ol>
           </>
         )}
 
@@ -302,14 +309,25 @@ function TypingRun({
           {state.index + 1} / {state.queue.length}
         </span>
         <div className="progress-bar" aria-hidden="true">
-          <div style={{ width: `${((state.index + 1) / state.queue.length) * 100}%` }} />
+          <motion.div
+            initial={false}
+            animate={{ width: `${((state.index + 1) / state.queue.length) * 100}%` }}
+            transition={spring}
+          />
         </div>
       </div>
 
-      <div className="typing-card panel">
+      {/* 問題が変わるたびに作り直され、右からすべり込む */}
+      <motion.div
+        key={`${state.round}-${state.index}`}
+        className="typing-card panel"
+        initial={{ opacity: 0, x: 48, scale: 0.97 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        transition={softSpring}
+      >
         <span className="face-label">{reverse ? '答え' : '問題'}</span>
         <p className="typing-prompt">{prompt}</p>
-      </div>
+      </motion.div>
 
       {state.phase === 'answering' && (
         <div className="typing-input">
@@ -348,7 +366,11 @@ function TypingRun({
       )}
 
       {state.phase === 'retyping' && last && (
-        <div className="typing-feedback incorrect">
+        <motion.div
+          className="typing-feedback incorrect"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0, ...shake }}
+        >
           <p className="verdict" role="alert">
             不正解
           </p>
@@ -367,7 +389,11 @@ function TypingRun({
               aria-invalid={state.retypeMissed || undefined}
             />
           </label>
-          {state.retypeMissed && <p className="error">まだ違います。もう一度打ってください</p>}
+          {state.retypeMissed && (
+            <motion.p className="error" initial={{ opacity: 0 }} animate={{ opacity: 1, ...shake }}>
+              まだ違います。もう一度打ってください
+            </motion.p>
+          )}
           <div className="typing-actions">
             <button type="button" className="button primary" onClick={() => void submitRetype()}>
               確かめる
@@ -376,14 +402,26 @@ function TypingRun({
               正解にする
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {showingResult && (
-        <div className={`typing-feedback ${resultCorrect ? 'correct' : 'incorrect'}`}>
-          <p className="verdict" role="alert">
+        // 正解：ぽんと弾んで光る ／ 不正解：横にぶるっと震える
+        <motion.div
+          key={`${state.attempts.length}-${resultCorrect}`}
+          className={`typing-feedback ${resultCorrect ? 'correct' : 'incorrect'}`}
+          initial={resultCorrect ? { opacity: 0, scale: 0.9 } : { opacity: 0, y: 8 }}
+          animate={resultCorrect ? { opacity: 1, scale: 1, transition: spring } : { opacity: 1, y: 0, ...shake }}
+        >
+          <motion.p
+            className="verdict"
+            role="alert"
+            initial={resultCorrect ? { scale: 0.6 } : false}
+            animate={{ scale: 1 }}
+            transition={{ ...spring, delay: 0.05 }}
+          >
             {resultCorrect ? (last.overridden ? '正解にしました' : '正解！') : '不正解'}
-          </p>
+          </motion.p>
           {!resultCorrect && <Answers given={last.given} expected={expected} />}
           {resultCorrect && last.overridden && <Answers given={last.given} expected={expected} />}
           <div className="typing-actions">
@@ -401,27 +439,9 @@ function TypingRun({
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
     </section>
-  )
-}
-
-// もらえたクレジット。計算の決まりも小さく添える
-function EarnedCredits({ credits }: { credits: number }) {
-  return (
-    <div className="earned">
-      {credits > 0 ? (
-        <p className="earned-value">
-          <span className="coin" aria-hidden="true" />+{formatCredits(credits)} クレジット
-        </p>
-      ) : (
-        <p className="earned-value none">今回はクレジットなし</p>
-      )}
-      <p className="hint">
-        1周目の正解1問につき {CREDITS_PER_VERIFIED}（「正解にする」は {CREDITS_PER_SELF_JUDGED}）×（0.5 ＋ 正答率）
-      </p>
-    </div>
   )
 }
 

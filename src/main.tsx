@@ -2,8 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { createSupabaseAuth } from './lib/auth'
-import { createSupabaseBlackjackRepository } from './lib/blackjackRepository'
-import { createSupabaseCreditRepository } from './lib/creditRepository'
 import { createSupabaseScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createSupabaseStudySetRepository } from './lib/studySetRepository'
 import { supabase } from './lib/supabaseClient'
@@ -14,11 +12,9 @@ import './styles.css'
 const repository = supabase ? createSupabaseStudySetRepository(supabase) : null
 const auth = supabase ? createSupabaseAuth(supabase) : null
 const notes = supabase ? createSupabaseScratchNoteRepository(supabase) : null
-const credits = supabase ? createSupabaseCreditRepository(supabase) : null
-const casino = supabase ? createSupabaseBlackjackRepository(supabase) : null
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App repository={repository} auth={auth} notes={notes} credits={credits} casino={casino} />
+    <App repository={repository} auth={auth} notes={notes} />
   </StrictMode>,
 )

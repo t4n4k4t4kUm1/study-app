@@ -1,7 +1,6 @@
 // データの保存先とのやり取りをまとめる層（リポジトリ）。
 // 画面はこのインターフェースだけを使うので、テストではメモリ上の実装に差し替えられる。
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { firstRoundCreditAnswers, sessionCredits } from './credits'
 import type { Database } from './database.types'
 import type { NewStudySet, StudySet, StudySetSummary } from './studySet'
 import type { NewStudySession, StudySessionSummary } from './studySession'
@@ -17,8 +16,8 @@ export interface StudySetRepository {
   updateSet(id: string, set: NewStudySet): Promise<void>
   /** 学習セットをカードごと削除する */
   deleteSet(id: string): Promise<void>
-  /** 1回の学習の記録（全部の答え）を保存し、もらえたクレジットを返す（クレジットの計算と付与は DB が行う） */
-  recordSession(session: NewStudySession): Promise<{ credits: number }>
+  /** 1回の学習の記録（全部の答え）を保存する */
+  recordSession(session: NewStudySession): Promise<void>
   /** そのセットの最近の記録（新しい順） */
   listRecentSessions(setId: string, limit?: number): Promise<StudySessionSummary[]>
 }
@@ -80,7 +79,7 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
     async recordSession(session) {
       // DB の関数 record_study_session を呼ぶ。セッションと答えが1回の処理でまとめて保存される。
       // DB の列名（snake_case）に合わせて名前を付け替えて送る
-      const { data, error } = await client.rpc('record_study_session', {
+      const { error } = await client.rpc('record_study_session', {
         p_set_id: session.setId,
         p_mode: session.mode,
         p_direction: session.direction,
@@ -95,9 +94,6 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
         })),
       })
       if (error) throw new Error(`記録を保存できませんでした: ${error.message}`)
-      // DB の関数は {"session_id": "…", "credits": 1950} の形で返す
-      const credits = (data as { credits?: unknown } | null)?.credits
-      return { credits: typeof credits === 'number' ? credits : 0 }
     },
 
     async listRecentSessions(setId, limit = 5) {
@@ -117,8 +113,7 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
 /** テスト用：メモリ上に保存する実装 */
 export function createMemoryStudySetRepository(
   initial: StudySet[] = [],
-  // credits：記録を保存したときに、もらえたクレジットを足す先（テストで残高の表示を確かめるため）
-  options: { failRecord?: boolean; credits?: { add: (amount: number) => void } } = {},
+  options: { failRecord?: boolean } = {},
 ): StudySetRepository & { recorded: NewStudySession[] } {
   const sets = initial.map((s) => ({ ...s, cards: [...s.cards] }))
   const recorded: NewStudySession[] = [] // テストで「何が保存されたか」を確かめるために外から見えるようにする
@@ -166,17 +161,7 @@ export function createMemoryStudySetRepository(
     },
     async recordSession(session) {
       if (options.failRecord) throw new Error('記録を保存できませんでした: テスト用の失敗')
-      // DB の関数と同じ決まりで計算する
-      const cards = new Map((sets.find((s) => s.id === session.setId)?.cards ?? []).map((c) => [c.id, c]))
-      const expectedOf = (cardId: string) => {
-        const card = cards.get(cardId)
-        if (!card) return undefined
-        return session.direction === 'reverse' ? card.question : card.answer
-      }
-      const credits = sessionCredits(firstRoundCreditAnswers(session.attempts, expectedOf))
       recorded.push(session)
-      if (credits > 0) options.credits?.add(credits)
-      return { credits }
     },
     async listRecentSessions(setId, limit = 5) {
       return recorded

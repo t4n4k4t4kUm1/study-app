@@ -1,5 +1,7 @@
 // 学習セットの一覧
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { itemVariants, listVariants } from '../components/motion'
 import { href } from '../lib/router'
 import { timeAgo, type StudySetSummary } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
@@ -33,7 +35,7 @@ export function HomePage({ repository }: { repository: StudySetRepository }) {
         </a>
       </div>
 
-      {state.status === 'loading' && <p className="muted">読み込み中…</p>}
+      {state.status === 'loading' && <p className="muted loading">読み込み中…</p>}
       {state.status === 'error' && (
         <p className="error" role="alert">
           {state.message}
@@ -41,14 +43,21 @@ export function HomePage({ repository }: { repository: StudySetRepository }) {
       )}
       {state.status === 'ready' &&
         (state.sets.length === 0 ? (
-          <div className="empty">
+          <motion.div className="empty" variants={itemVariants} initial="hidden" animate="show">
             <p>まだ学習セットがありません。</p>
             <p className="muted">問題と答えの組をまとめて「学習セット」を作ると、カードをめくって覚えられます。</p>
-          </div>
+          </motion.div>
         ) : (
-          <ul className="set-list" aria-label="学習セットの一覧">
+          // 一覧のカードが、上から少しずつ遅れて浮かび上がる
+          <motion.ul
+            className="set-list"
+            aria-label="学習セットの一覧"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
             {state.sets.map((s) => (
-              <li key={s.id}>
+              <motion.li key={s.id} variants={itemVariants}>
                 <a className="set-item" href={href({ name: 'set', id: s.id })}>
                   <span className="set-title">{s.title}</span>
                   {s.description && <span className="set-description">{s.description}</span>}
@@ -56,9 +65,9 @@ export function HomePage({ repository }: { repository: StudySetRepository }) {
                     {s.card_count}枚 · {timeAgo(s.created_at)}
                   </span>
                 </a>
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         ))}
     </>
   )
