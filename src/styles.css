@@ -734,6 +734,66 @@ input[type='radio'] {
   gap: 8px;
 }
 
+/* 使えない学習形式の札：暗くして、押せないことが分かるようにする */
+.mode-wrap {
+  position: relative;
+  display: grid;
+}
+.mode.disabled {
+  background: var(--glass);
+  border-color: var(--glass-edge);
+  color: var(--muted);
+  box-shadow: var(--glass-shadow);
+  cursor: not-allowed;
+  filter: saturate(0.4);
+  opacity: 0.7;
+}
+.mode.disabled::after {
+  display: none;
+}
+.mode.disabled:hover {
+  transform: none;
+}
+.mode.disabled:focus-visible {
+  outline: 3px solid var(--muted);
+  outline-offset: 3px;
+}
+/* 吹き出し：札の上に出る。下に小さな三角のしっぽ */
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  right: 0; /* 札と同じ幅にする（画面の端の札でも、吹き出しがはみ出さない） */
+  z-index: 5;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+  box-shadow: var(--lift-shadow);
+  pointer-events: none;
+}
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -7px;
+  border: 7px solid transparent;
+  border-top-color: var(--text);
+}
+/* 画面には出さず、読み上げソフトにだけ伝える文字 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ---------- カードで学ぶ（主役：分厚いガラスの単語カード） ---------- */
 .deck-progress {
   display: flex;
@@ -1093,6 +1153,108 @@ input[type='radio'] {
 }
 .typing .deck-finished-actions {
   justify-content: flex-start;
+}
+
+/* ---------- 4択で学ぶ ---------- */
+.choices {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  height: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-strong);
+  box-shadow: var(--glass-shadow);
+  color: var(--text);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.18s,
+    border-color 0.18s,
+    background 0.18s;
+}
+.choice:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: var(--lift-shadow);
+}
+.choice:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.choice:disabled {
+  cursor: default;
+}
+.choice:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+/* 番号（キーボードの 1〜4） */
+.choice-key {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.choice-text {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.choice.is-correct {
+  border-color: var(--good);
+  background: color-mix(in srgb, var(--good-soft) 75%, var(--glass-strong));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent),
+    var(--glass-shadow);
+}
+.choice.is-correct .choice-key {
+  background: var(--good);
+  color: var(--on-accent);
+}
+.choice.is-wrong {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error-soft) 75%, var(--glass-strong));
+}
+.choice.is-wrong .choice-key {
+  background: var(--error);
+  color: var(--on-accent);
+}
+/* 答えたあと、関係ない選択肢は薄くする */
+.choice.is-idle:disabled {
+  opacity: 0.55;
+}
+.verdict-line {
+  margin: 14px 0 0;
+  font-weight: 700;
+}
+.verdict-line.incorrect {
+  color: var(--error);
+}
+@media (max-width: 560px) {
+  .choices {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---------- 掃きだめメモ ---------- */

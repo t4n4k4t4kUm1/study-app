@@ -6,6 +6,7 @@
 //   #/sets/<id>/cards  カードで学ぶ
 //   #/sets/<id>/edit   学習セットを編集
 //   #/sets/<id>/type   キーボードで答えて学ぶ
+//   #/sets/<id>/choice 4択で学ぶ
 // # を使う方式（ハッシュルーティング）にしたのは、サーバー側の設定なしで
 // 再読み込みやブックマークが効くから（Vercel で 404 にならない）。
 // ライブラリ（react-router など）を足すほどの画面数ではないので、自前で十数行にしている。
@@ -18,6 +19,7 @@ export type Route =
   | { name: 'cards'; id: string }
   | { name: 'edit'; id: string }
   | { name: 'typing'; id: string }
+  | { name: 'choice'; id: string }
   | { name: 'notFound' }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -25,6 +27,7 @@ const SET_PATH = new RegExp(`^/sets/(${UUID})$`, 'i')
 const CARDS_PATH = new RegExp(`^/sets/(${UUID})/cards$`, 'i')
 const EDIT_PATH = new RegExp(`^/sets/(${UUID})/edit$`, 'i')
 const TYPING_PATH = new RegExp(`^/sets/(${UUID})/type$`, 'i')
+const CHOICE_PATH = new RegExp(`^/sets/(${UUID})/choice$`, 'i')
 
 /** location.hash（例："#/sets/xxxx"）から画面を決める */
 export function parseRoute(hash: string): Route {
@@ -40,6 +43,8 @@ export function parseRoute(hash: string): Route {
   if (edit) return { name: 'edit', id: edit[1].toLowerCase() }
   const typing = TYPING_PATH.exec(path)
   if (typing) return { name: 'typing', id: typing[1].toLowerCase() }
+  const choice = CHOICE_PATH.exec(path)
+  if (choice) return { name: 'choice', id: choice[1].toLowerCase() }
   return { name: 'notFound' }
 }
 
@@ -60,5 +65,7 @@ export function href(route: Exclude<Route, { name: 'notFound' }>): string {
       return `#/sets/${route.id}/edit`
     case 'typing':
       return `#/sets/${route.id}/type`
+    case 'choice':
+      return `#/sets/${route.id}/choice`
   }
 }

@@ -8,6 +8,7 @@ import type { ScratchNoteRepository } from './lib/scratchNoteRepository'
 import type { StudySetRepository } from './lib/studySetRepository'
 import { useHashRoute } from './lib/useHashRoute'
 import { useSession } from './lib/useSession'
+import { ChoicePage } from './pages/ChoicePage'
 import { EditSetPage } from './pages/EditSetPage'
 import { FlashcardsPage } from './pages/FlashcardsPage'
 import { HomePage } from './pages/HomePage'
@@ -164,6 +165,8 @@ function Page({
       return <EditSetPage repository={repository} id={route.id} />
     case 'typing':
       return <TypingPage repository={repository} id={route.id} />
+    case 'choice':
+      return <ChoicePage repository={repository} id={route.id} />
     case 'notFound':
       return (
         <section className="notice">

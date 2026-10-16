@@ -1,27 +1,18 @@
 // キーボードで答えて学ぶ画面。「はじめる前の設定」→「出題」→「結果」の3つの場面がある。
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
-import { itemVariants, listVariants, shake, softSpring, spring } from '../components/motion'
+import { shake, spring } from '../components/motion'
+import { StudyPromptHeader, StudyResult, StudyStart } from '../components/StudyParts'
 import { range, shuffle } from '../lib/deck'
 import { exactJudge, type Judge } from '../lib/judge'
-import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
-import { MODE_LABELS, percent, type Direction } from '../lib/studySession'
-import {
-  currentCardId,
-  firstRoundMistakes,
-  firstRoundScore,
-  lastAttempt,
-  isCorrect,
-  startTyping,
-  typingReducer,
-  type TypingMode,
-} from '../lib/typing'
+import { currentCardId, lastAttempt, isCorrect, startTyping, typingReducer, type TypingMode } from '../lib/typing'
+import { useSessionSaver, type StudySettings } from '../lib/useSessionSaver'
 import { useStudySet } from '../lib/useStudySet'
 import { LoadStatus } from './LoadStatus'
 
-type Settings = { mode: TypingMode; direction: Direction; shuffle: boolean }
+type Settings = StudySettings
 
 export function TypingPage({
   repository,
@@ -61,58 +52,20 @@ const MODE_DESCRIPTIONS: Record<TypingMode, string> = {
 }
 
 function TypingStart({ set, onStart }: { set: StudySet; onStart: (s: Settings) => void }) {
-  const [mode, setMode] = useState<TypingMode>('normal')
-  const [reverse, setReverse] = useState(false)
-  const [shuffled, setShuffled] = useState(true)
-
   return (
-    <section className="typing">
-      <nav className="crumb">
-        <a href={href({ name: 'set', id: set.id })}>← {set.title}</a>
-      </nav>
-      <h1>入力で学ぶ</h1>
-      <p className="muted">{set.cards.length}問。答えをキーボードで打って、Enter で答え合わせします。</p>
-
-      <fieldset className="panel mode-choice">
-        <legend>モード</legend>
-        {(['normal', 'test', 'thorough'] as const).map((m) => (
-          <label key={m} className={`mode-option${mode === m ? ' selected' : ''}`}>
-            <input type="radio" name="mode" value={m} checked={mode === m} onChange={() => setMode(m)} />
-            <span>
-              <span className="mode-option-name">{MODE_LABELS[m]}モード</span>
-              <span className="mode-option-desc">{MODE_DESCRIPTIONS[m]}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      <div className="typing-options">
-        <label className="check">
-          <input type="checkbox" checked={reverse} onChange={(e) => setReverse(e.target.checked)} />
-          逆向き（答えを見て、問題を打つ）
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={shuffled} onChange={(e) => setShuffled(e.target.checked)} />
-          順番をシャッフル
-        </label>
-      </div>
-      <p className="hint">判定は完全一致です（前後の空白だけは無視）。打ち間違いなどは「正解にする」で直せます。</p>
-
-      <button
-        type="button"
-        className="button primary start-button"
-        onClick={() => onStart({ mode, direction: reverse ? 'reverse' : 'forward', shuffle: shuffled })}
-        autoFocus
-      >
-        はじめる
-      </button>
-    </section>
+    <StudyStart
+      set={set}
+      title="入力で学ぶ"
+      lead={`${set.cards.length}問。答えをキーボードで打って、Enter で答え合わせします。`}
+      modeDescriptions={MODE_DESCRIPTIONS}
+      reverseLabel="逆向き（答えを見て、問題を打つ）"
+      hint="判定は完全一致です（前後の空白だけは無視）。打ち間違いなどは「正解にする」で直せます。"
+      onStart={onStart}
+    />
   )
 }
 
 // ---------------- 出題と結果 ----------------
-
-type SaveState = { status: 'saving' } | { status: 'saved' } | { status: 'error'; message: string }
 
 function TypingRun({
   set,
@@ -136,9 +89,7 @@ function TypingRun({
   })
   const [input, setInput] = useState('')
   const [checking, setChecking] = useState(false)
-  const [saveState, setSaveState] = useState<SaveState>({ status: 'saving' })
-  const startedAt = useRef(new Date().toISOString())
-  const savedOnce = useRef(false)
+  const { saveState, save } = useSessionSaver({ repository, set, method: 'typing', settings, state })
   const inputRef = useRef<HTMLInputElement>(null)
   const reverse = settings.direction === 'reverse'
 
@@ -146,29 +97,6 @@ function TypingRun({
   useEffect(() => {
     if (state.phase === 'answering' || state.phase === 'retyping') inputRef.current?.focus()
   }, [state.phase, state.index, state.round])
-
-  // 終わったら1回だけ記録を保存する（開発中の React は確認のために処理を2回走らせることがあるので、ref で1回に絞る）
-  function save() {
-    setSaveState({ status: 'saving' })
-    repository
-      .recordSession({
-        setId: set.id,
-        mode: settings.mode,
-        direction: settings.direction,
-        startedAt: startedAt.current,
-        attempts: state.attempts,
-      })
-      .then(() => setSaveState({ status: 'saved' }))
-      .catch((e: unknown) =>
-        setSaveState({ status: 'error', message: e instanceof Error ? e.message : '記録を保存できませんでした' }),
-      )
-  }
-  useEffect(() => {
-    if (state.phase !== 'finished' || savedOnce.current) return
-    savedOnce.current = true
-    save()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 終わったときに1回だけ呼ぶ
-  }, [state.phase])
 
   const nextOrder = () => (settings.shuffle ? shuffle(range(state.wrong.length)).map((i) => state.wrong[i]) : undefined)
 
@@ -206,90 +134,17 @@ function TypingRun({
   }
 
   if (state.phase === 'finished') {
-    const score = firstRoundScore(state)
-    const mistakes = firstRoundMistakes(state)
     return (
-      <section className="typing">
-        <nav className="crumb">
-          <a href={href({ name: 'set', id: set.id })}>← {set.title}</a>
-        </nav>
-        <motion.div
-          className="typing-result panel"
-          role="status"
-          initial={{ opacity: 0, scale: 0.92, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={softSpring}
-        >
-          <h1>おつかれさまでした</h1>
-          <p className="score">
-            <span className="score-label">1周目の正解</span>
-            <motion.span
-              className="score-value"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ ...spring, delay: 0.15 }}
-            >
-              {score.correct} / {score.total}
-            </motion.span>
-            <span className="score-percent">{percent(score.correct, score.total)}%</span>
-          </p>
-          <p className="muted">
-            {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
-            {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
-          </p>
-          <p className={`save-status ${saveState.status}`}>
-            {saveState.status === 'saving' && '記録を保存しています…'}
-            {saveState.status === 'saved' && '記録を保存しました'}
-            {saveState.status === 'error' && (
-              <>
-                {saveState.message}{' '}
-                <button type="button" className="link-button" onClick={save}>
-                  もう一度保存する
-                </button>
-              </>
-            )}
-          </p>
-        </motion.div>
-
-        {mistakes.length > 0 && (
-          <>
-            <h2>1周目に間違えた問題</h2>
-            <motion.ol
-              className="card-list mistakes"
-              aria-label="間違えた問題"
-              variants={listVariants}
-              initial="hidden"
-              animate="show"
-            >
-              {mistakes.map((a) => {
-                const c = cardsById.get(a.cardId)
-                if (!c) return null
-                return (
-                  <motion.li key={a.cardId} variants={itemVariants}>
-                    <span className="q">{reverse ? c.answer : c.question}</span>
-                    <span className="a">
-                      <span className="given">{a.given === '' ? '（わからない）' : a.given}</span>
-                      <span className="expected">→ {reverse ? c.question : c.answer}</span>
-                    </span>
-                  </motion.li>
-                )
-              })}
-            </motion.ol>
-          </>
-        )}
-
-        <div className="deck-finished-actions">
-          <button type="button" className="button primary" onClick={onAgain} autoFocus>
-            もう一度
-          </button>
-          <button type="button" className="button" onClick={onChangeSettings}>
-            設定を変える
-          </button>
-          <a className="button" href={href({ name: 'set', id: set.id })}>
-            セットに戻る
-          </a>
-        </div>
-      </section>
+      <StudyResult
+        set={set}
+        settings={settings}
+        state={state}
+        saveState={saveState}
+        onRetrySave={save}
+        onAgain={onAgain}
+        onChangeSettings={onChangeSettings}
+        emptyAnswerLabel="（わからない）"
+      />
     )
   }
 
@@ -300,34 +155,7 @@ function TypingRun({
 
   return (
     <section className="typing">
-      <nav className="crumb">
-        <a href={href({ name: 'set', id: set.id })}>← {set.title}（やめる）</a>
-      </nav>
-      <div className="deck-progress">
-        <span aria-live="polite">
-          {state.round > 1 && <span className="round">{state.round}周目（間違えた問題）・</span>}
-          {state.index + 1} / {state.queue.length}
-        </span>
-        <div className="progress-bar" aria-hidden="true">
-          <motion.div
-            initial={false}
-            animate={{ width: `${((state.index + 1) / state.queue.length) * 100}%` }}
-            transition={spring}
-          />
-        </div>
-      </div>
-
-      {/* 問題が変わるたびに作り直され、右からすべり込む */}
-      <motion.div
-        key={`${state.round}-${state.index}`}
-        className="typing-card panel"
-        initial={{ opacity: 0, x: 48, scale: 0.97 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        transition={softSpring}
-      >
-        <span className="face-label">{reverse ? '答え' : '問題'}</span>
-        <p className="typing-prompt">{prompt}</p>
-      </motion.div>
+      <StudyPromptHeader set={set} state={state} reverse={reverse} prompt={prompt} />
 
       {state.phase === 'answering' && (
         <div className="typing-input">

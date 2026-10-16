@@ -84,6 +84,7 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
         p_mode: session.mode,
         p_direction: session.direction,
         p_started_at: session.startedAt,
+        p_method: session.method,
         p_attempts: session.attempts.map((a) => ({
           card_id: a.cardId,
           round: a.round,
@@ -99,12 +100,12 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
     async listRecentSessions(setId, limit = 5) {
       const { data, error } = await client
         .from('study_sessions')
-        .select('id, mode, direction, finished_at, first_round_correct, first_round_total')
+        .select('id, method, mode, direction, finished_at, first_round_correct, first_round_total')
         .eq('set_id', setId)
         .order('finished_at', { ascending: false })
         .limit(limit)
       if (error) throw new Error(`記録を読み込めませんでした: ${error.message}`)
-      // DB では mode・direction はただの文字列なので、決まった値だけが入っている前提で型を付ける
+      // DB では method・mode・direction はただの文字列なので、決まった値だけが入っている前提で型を付ける
       return data as StudySessionSummary[]
     },
   }
@@ -170,6 +171,7 @@ export function createMemoryStudySetRepository(
           const first = r.attempts.filter((a) => a.round === 1)
           return {
             id: `session-${i}`,
+            method: r.method,
             mode: r.mode,
             direction: r.direction,
             finished_at: r.attempts.at(-1)?.answeredAt ?? r.startedAt,

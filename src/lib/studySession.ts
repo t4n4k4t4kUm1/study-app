@@ -4,9 +4,18 @@ import type { Attempt, TypingMode } from './typing'
 /** forward：問題を見て答えを打つ / reverse：答えを見て問題を打つ */
 export type Direction = 'forward' | 'reverse'
 
+/** どの形式で学んだか。typing：入力（キーボードで答える） / choice：4択 */
+export type StudyMethod = 'typing' | 'choice'
+
+export const METHOD_LABELS: Record<StudyMethod, string> = {
+  typing: '入力',
+  choice: '4択',
+}
+
 /** 保存するときに渡すもの */
 export type NewStudySession = {
   setId: string
+  method: StudyMethod
   mode: TypingMode
   direction: Direction
   startedAt: string
@@ -16,6 +25,7 @@ export type NewStudySession = {
 /** 一覧に出すもの */
 export type StudySessionSummary = {
   id: string
+  method: StudyMethod
   mode: TypingMode
   direction: Direction
   finished_at: string

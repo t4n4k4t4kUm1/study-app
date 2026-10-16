@@ -1,11 +1,12 @@
 // 1つの学習セットの中身。ここから学習の形式を選んだり、編集・削除したりする。
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
-import { itemVariants, listVariants, softSpring } from '../components/motion'
+import { useEffect, useId, useState } from 'react'
+import { itemVariants, listVariants, softSpring, spring } from '../components/motion'
+import { choiceAvailability } from '../lib/choice'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
-import { formatJst, MODE_LABELS, percent, type StudySessionSummary } from '../lib/studySession'
+import { formatJst, METHOD_LABELS, MODE_LABELS, percent, type StudySessionSummary } from '../lib/studySession'
 import { navigate } from '../lib/useHashRoute'
 import { useStudySet } from '../lib/useStudySet'
 import { LoadStatus } from './LoadStatus'
@@ -14,6 +15,7 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
   const state = useStudySet(repository, id)
   if (state.status !== 'ready') return <LoadStatus state={state} />
   const { set } = state
+  const choice = choiceAvailability(set.cards.length)
 
   return (
     <>
@@ -39,6 +41,14 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
           <span className="mode-name">入力</span>
           <span className="mode-desc">キーボードで答える</span>
         </motion.a>
+        {choice.ok ? (
+          <motion.a className="mode" href={href({ name: 'choice', id: set.id })} variants={itemVariants}>
+            <span className="mode-name">4択</span>
+            <span className="mode-desc">4つから選ぶ</span>
+          </motion.a>
+        ) : (
+          <LockedMode name="4択" desc="4つから選ぶ" reason={choice.reason} />
+        )}
       </motion.div>
 
       <RecentSessions setId={set.id} repository={repository} />
@@ -58,7 +68,57 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
   )
 }
 
-// 入力で学んだ最近の記録（新しい順に5回分）
+// 使えない学習形式の札。暗くして押せないようにし、マウスを乗せる・タップする・キーボードで選ぶと、
+// 使えない理由を吹き出しで出す（スマホにはマウスを乗せる操作がないので、タップでも出す）
+function LockedMode({ name, desc, reason }: { name: string; desc: string; reason: string }) {
+  const [open, setOpen] = useState(false)
+  const tipId = useId()
+  return (
+    <motion.div className="mode-wrap" variants={itemVariants}>
+      <span
+        className="mode disabled"
+        role="link"
+        aria-disabled="true"
+        aria-describedby={tipId}
+        tabIndex={0}
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+      >
+        <span className="mode-name">{name}</span>
+        <span className="mode-desc">{desc}</span>
+      </span>
+      <AnimatePresence>
+        {open && (
+          // 吹き出し：札の上に、ばねで弾むように出てくる
+          <motion.span
+            key="tip"
+            id={tipId}
+            role="tooltip"
+            className="tooltip"
+            initial={{ opacity: 0, y: 6, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97, transition: { duration: 0.12 } }}
+            transition={spring}
+          >
+            {reason}
+          </motion.span>
+        )}
+      </AnimatePresence>
+      {/* 吹き出しが閉じているときも、読み上げソフトには理由を伝える */}
+      {!open && (
+        <span id={tipId} className="visually-hidden">
+          {reason}
+        </span>
+      )}
+    </motion.div>
+  )
+}
+
+// 入力・4択で学んだ最近の記録（新しい順に5回分）
 function RecentSessions({ setId, repository }: { setId: string; repository: StudySetRepository }) {
   const [sessions, setSessions] = useState<StudySessionSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -90,7 +150,7 @@ function RecentSessions({ setId, repository }: { setId: string; repository: Stud
           <motion.li key={s.id} variants={itemVariants}>
             <span className="session-when">{formatJst(s.finished_at)}</span>
             <span className="session-mode">
-              入力・{MODE_LABELS[s.mode]}
+              {METHOD_LABELS[s.method]}・{MODE_LABELS[s.mode]}
               {s.direction === 'reverse' ? '・逆向き' : ''}
             </span>
             <span className="session-score">

@@ -74,6 +74,7 @@ export type Database = {
           set_id: string
           mode: string
           direction: string
+          method: string
           started_at: string
           finished_at: string
           first_round_correct: number
@@ -85,6 +86,7 @@ export type Database = {
           set_id: string
           mode: string
           direction: string
+          method?: string
           started_at: string
           finished_at?: string
           first_round_correct: number
@@ -147,7 +149,14 @@ export type Database = {
         Returns: string
       }
       record_study_session: {
-        Args: { p_set_id: string; p_mode: string; p_direction: string; p_started_at: string; p_attempts: Json }
+        Args: {
+          p_set_id: string
+          p_mode: string
+          p_direction: string
+          p_started_at: string
+          p_attempts: Json
+          p_method?: string
+        }
         Returns: string
       }
     }
