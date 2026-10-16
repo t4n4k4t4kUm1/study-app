@@ -9,6 +9,8 @@ describe('parseRoute', () => {
     ['#/', { name: 'home' }],
     ['#/new', { name: 'new' }],
     ['#/memo', { name: 'memo' }],
+    ['#/casino', { name: 'blackjack' }],
+    ['#/casino/blackjack', { name: 'blackjack' }],
     [`#/sets/${id}`, { name: 'set', id }],
     [`#/sets/${id}/cards`, { name: 'cards', id }],
     [`#/sets/${id}/edit`, { name: 'edit', id }],
@@ -22,5 +24,6 @@ describe('parseRoute', () => {
 
   it('href で作ったリンクは parseRoute で元に戻る', () => {
     expect(parseRoute(href({ name: 'cards', id }))).toEqual({ name: 'cards', id })
+    expect(parseRoute(href({ name: 'blackjack' }))).toEqual({ name: 'blackjack' })
   })
 })

@@ -168,6 +168,27 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      // ブラックジャック。どれも「見てよい形」（src/lib/blackjack.ts の BlackjackView）を返す
+      blackjack_state: {
+        Args: Record<PropertyKey, never>
+        Returns: Json // 途中の勝負が無ければ null
+      }
+      blackjack_start: {
+        Args: { p_bet: number }
+        Returns: Json
+      }
+      blackjack_hit: {
+        Args: { p_round_id: string }
+        Returns: Json
+      }
+      blackjack_stand: {
+        Args: { p_round_id: string }
+        Returns: Json
+      }
+      blackjack_double: {
+        Args: { p_round_id: string }
+        Returns: Json
+      }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }

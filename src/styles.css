@@ -13,6 +13,11 @@
   --coin: #d9a400;
   --coin-edge: #a87c00;
   --coin-text: #8a6500;
+  --felt: #1d6b47;
+  --felt-edge: #14513a;
+  --card-face: #ffffff;
+  --card-ink: #1f2328;
+  --card-red: #c0392b;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 6%);
   color-scheme: light;
 }
@@ -32,6 +37,11 @@
     --coin: #f2c230;
     --coin-edge: #b8901a;
     --coin-text: #f2c230;
+    --felt: #17543a;
+    --felt-edge: #0f3c29;
+    --card-face: #f4f1ea;
+    --card-ink: #1f2328;
+    --card-red: #b3261e;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
     color-scheme: dark;
   }
@@ -1031,4 +1041,205 @@ input[type='checkbox'] {
 }
 .earned .hint {
   margin: 2px 0 0;
+}
+
+/* ---------- カジノ（ブラックジャック） ---------- */
+.casino h1 {
+  margin-bottom: 4px;
+}
+/* 緑のフェルトのテーブル */
+.bj-table {
+  display: grid;
+  gap: 18px;
+  margin: 16px 0;
+  padding: 20px;
+  min-height: 300px;
+  border: 6px solid var(--felt-edge);
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 50% 30%, rgb(255 255 255 / 8%), transparent 70%), var(--felt);
+  color: #fff;
+}
+.bj-empty {
+  align-self: center;
+  margin: 0;
+  text-align: center;
+  color: rgb(255 255 255 / 75%);
+}
+.bj-hand-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.bj-who {
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 80%);
+}
+.bj-total {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 25%);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bj-total.bust {
+  background: var(--card-red);
+}
+.bj-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* トランプ1枚 */
+.playing-card {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 64px;
+  height: 90px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--card-face);
+  color: var(--card-ink);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+  font-weight: 700;
+  line-height: 1;
+  animation: deal 0.2s ease-out;
+}
+.playing-card.red {
+  color: var(--card-red);
+}
+.pc-rank {
+  font-size: 1.2rem;
+}
+.pc-suit {
+  align-self: flex-end;
+  font-size: 1.6rem;
+}
+/* 伏せたカード（裏面の模様） */
+.playing-card.back {
+  background: repeating-linear-gradient(45deg, rgb(255 255 255 / 18%) 0 4px, transparent 4px 9px), #8f2d3a;
+  border: 3px solid var(--card-face);
+}
+@keyframes deal {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+}
+.bj-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 30%);
+}
+.bj-result-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.bj-result-net {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bj-result.plus .bj-result-net {
+  color: #ffd75e;
+}
+.bj-result.minus .bj-result-net {
+  color: #ffb4ab;
+}
+.bj-result-reason {
+  width: 100%;
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 80%);
+}
+.bj-actions,
+.bj-bet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.bj-actions .hint {
+  width: 100%;
+  margin: 0;
+}
+.bj-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+/* チップ：色つきの丸 */
+.chip {
+  width: 64px;
+  height: 64px;
+  border: 4px dashed rgb(255 255 255 / 70%);
+  border-radius: 50%;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 25%);
+}
+.chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.chip:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+.chip-100 {
+  background: #4a5568;
+}
+.chip-500 {
+  background: #2f5aa8;
+}
+.chip-1000 {
+  background: #b3261e;
+}
+.chip-5000 {
+  background: #6b3fa0;
+}
+.bj-bet-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.bj-bet-amount strong {
+  font-size: 1.3rem;
+}
+.bj-bet .error {
+  width: 100%;
+  margin: 0;
+}
+.bj-broke p {
+  margin-top: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .playing-card {
+    animation: none;
+  }
+}
+@media (max-width: 560px) {
+  .bj-table {
+    padding: 14px;
+    border-width: 4px;
+  }
+  .playing-card {
+    width: 54px;
+    height: 78px;
+  }
+  .chip {
+    width: 58px;
+    height: 58px;
+  }
 }

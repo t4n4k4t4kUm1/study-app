@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
 import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
@@ -41,6 +42,7 @@ describe('ログイン', () => {
         auth={auth}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -65,6 +67,7 @@ describe('ログイン', () => {
         auth={createMemoryAuth()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -86,6 +89,7 @@ describe('ログイン', () => {
         auth={createMemoryAuth({ confirmationRequired: true })}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'はじめての方はアカウントを作る' }))
@@ -106,6 +110,7 @@ describe('学習セットを編集する', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -134,6 +139,7 @@ describe('学習セットを編集する', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -151,6 +157,7 @@ describe('学習セットを編集する', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     expect(await screen.findByRole('button', { name: '1枚目を上へ' })).toBeDisabled()
@@ -168,6 +175,7 @@ describe('学習セットを削除する', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -188,6 +196,7 @@ describe('学習セットを削除する', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 

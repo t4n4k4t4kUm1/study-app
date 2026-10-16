@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
 import { createMemoryCreditRepository } from './lib/creditRepository'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
@@ -24,6 +25,7 @@ describe('クイックメモ', () => {
         auth={signedIn()}
         notes={notes}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
 
@@ -48,6 +50,7 @@ describe('クイックメモ', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'メモを開く' }))
@@ -64,6 +67,7 @@ describe('クイックメモ', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'メモを開く' }))
@@ -80,6 +84,7 @@ describe('クイックメモ', () => {
         auth={createMemoryAuth()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await screen.findByRole('heading', { name: 'ログイン' })

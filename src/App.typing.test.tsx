@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
 import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
@@ -45,6 +46,7 @@ describe('通常モード', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await start(user, '通常モード')
@@ -96,6 +98,7 @@ describe('テストモードと「正解にする」', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await start(user, 'テストモード')
@@ -126,6 +129,7 @@ describe('徹底モード', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await start(user, '徹底モード')
@@ -151,6 +155,7 @@ describe('逆向き・日本語入力', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await start(user, 'テストモード', { reverse: true })
@@ -168,6 +173,7 @@ describe('逆向き・日本語入力', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository()}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     await start(user, 'テストモード')
@@ -188,6 +194,7 @@ it('記録の保存に失敗したら、そう伝えてもう一度保存でき�
       auth={signedIn()}
       notes={createMemoryScratchNoteRepository()}
       credits={createMemoryCreditRepository()}
+      casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
     />,
   )
   await start(user, 'テストモード')

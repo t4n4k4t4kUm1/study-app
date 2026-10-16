@@ -6,6 +6,7 @@
 //   #/sets/<id>/cards  カードで学ぶ
 //   #/sets/<id>/edit   学習セットを編集
 //   #/sets/<id>/type   キーボードで答えて学ぶ
+//   #/casino/blackjack カジノのブラックジャック（#/casino でも同じ）
 // # を使う方式（ハッシュルーティング）にしたのは、サーバー側の設定なしで
 // 再読み込みやブックマークが効くから（Vercel で 404 にならない）。
 // ライブラリ（react-router など）を足すほどの画面数ではないので、自前で十数行にしている。
@@ -18,6 +19,7 @@ export type Route =
   | { name: 'cards'; id: string }
   | { name: 'edit'; id: string }
   | { name: 'typing'; id: string }
+  | { name: 'blackjack' }
   | { name: 'notFound' }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -32,6 +34,7 @@ export function parseRoute(hash: string): Route {
   if (path === '/') return { name: 'home' }
   if (path === '/new') return { name: 'new' }
   if (path === '/memo') return { name: 'memo' }
+  if (path === '/casino' || path === '/casino/blackjack') return { name: 'blackjack' }
   const set = SET_PATH.exec(path)
   if (set) return { name: 'set', id: set[1].toLowerCase() }
   const cards = CARDS_PATH.exec(path)
@@ -60,5 +63,7 @@ export function href(route: Exclude<Route, { name: 'notFound' }>): string {
       return `#/sets/${route.id}/edit`
     case 'typing':
       return `#/sets/${route.id}/type`
+    case 'blackjack':
+      return '#/casino/blackjack'
   }
 }

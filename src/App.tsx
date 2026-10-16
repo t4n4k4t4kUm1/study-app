@@ -1,6 +1,7 @@
 // 画面全体。ログインしていなければログイン画面を、していれば URL の # に合わせたページを出す。
 import { QuickMemo } from './components/QuickMemo'
 import type { AuthClient, Session } from './lib/auth'
+import type { BlackjackRepository } from './lib/blackjackRepository'
 import type { CreditRepository } from './lib/creditRepository'
 import { formatCredits } from './lib/credits'
 import { href, type Route } from './lib/router'
@@ -9,6 +10,7 @@ import type { StudySetRepository } from './lib/studySetRepository'
 import { useCreditBalance } from './lib/useCreditBalance'
 import { useHashRoute } from './lib/useHashRoute'
 import { useSession } from './lib/useSession'
+import { BlackjackPage } from './pages/BlackjackPage'
 import { EditSetPage } from './pages/EditSetPage'
 import { FlashcardsPage } from './pages/FlashcardsPage'
 import { HomePage } from './pages/HomePage'
@@ -23,13 +25,14 @@ type Props = {
   auth: AuthClient | null
   notes: ScratchNoteRepository | null
   credits: CreditRepository | null
+  casino: BlackjackRepository | null
 }
 
-export default function App({ repository, auth, notes, credits }: Props) {
+export default function App({ repository, auth, notes, credits, casino }: Props) {
   return (
     <div className="app">
-      {repository && auth && notes && credits ? (
-        <Main repository={repository} auth={auth} notes={notes} credits={credits} />
+      {repository && auth && notes && credits && casino ? (
+        <Main repository={repository} auth={auth} notes={notes} credits={credits} casino={casino} />
       ) : (
         <>
           <Header session={null} />
@@ -47,11 +50,13 @@ function Main({
   auth,
   notes,
   credits,
+  casino,
 }: {
   repository: StudySetRepository
   auth: AuthClient
   notes: ScratchNoteRepository
   credits: CreditRepository
+  casino: BlackjackRepository
 }) {
   const route = useHashRoute()
   const session = useSession(auth)
@@ -73,6 +78,8 @@ function Main({
             route={route}
             repository={repository}
             notes={notes}
+            casino={casino}
+            balance={balance.balance}
             onCreditsChange={balance.refresh}
           />
         )}
@@ -105,6 +112,7 @@ function Header({
         <nav className="main-nav" aria-label="メニュー">
           <a href={href({ name: 'home' })}>学習セット</a>
           <a href={href({ name: 'memo' })}>メモ</a>
+          <a href={href({ name: 'blackjack' })}>カジノ</a>
         </nav>
       )}
       {session && (
@@ -136,11 +144,15 @@ function Page({
   route,
   repository,
   notes,
+  casino,
+  balance,
   onCreditsChange,
 }: {
   route: Route
   repository: StudySetRepository
   notes: ScratchNoteRepository
+  casino: BlackjackRepository
+  balance: number | null
   onCreditsChange: () => void
 }) {
   switch (route.name) {
@@ -150,6 +162,8 @@ function Page({
       return <NewSetPage repository={repository} />
     case 'memo':
       return <NotesPage notes={notes} />
+    case 'blackjack':
+      return <BlackjackPage casino={casino} balance={balance} onCreditsChange={onCreditsChange} />
     // key に id を渡すと、別のセットに移ったときにページの状態が作り直される
     case 'set':
       return <SetPage key={route.id} repository={repository} id={route.id} />

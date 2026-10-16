@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryBlackjackRepository } from './lib/blackjackRepository'
 import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
@@ -27,7 +28,13 @@ function renderApp(options: { initial?: number; failRecord?: boolean } = {}) {
   const credits = createMemoryCreditRepository(options.initial ?? 0)
   const repository = createMemoryStudySetRepository([sample()], { credits, failRecord: options.failRecord })
   render(
-    <App repository={repository} auth={signedIn()} notes={createMemoryScratchNoteRepository()} credits={credits} />,
+    <App
+      repository={repository}
+      auth={signedIn()}
+      notes={createMemoryScratchNoteRepository()}
+      credits={credits}
+      casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
+    />,
   )
   return { credits, repository }
 }
@@ -100,6 +107,7 @@ describe('クレジット', () => {
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
         credits={createMemoryCreditRepository(0, { failLoad: true })}
+        casino={createMemoryBlackjackRepository({ credits: createMemoryCreditRepository() })}
       />,
     )
     expect(await screen.findByTitle('クレジットを読み込めませんでした')).toHaveTextContent('—')
