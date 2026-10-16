@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
@@ -35,7 +36,12 @@ describe('ログイン', () => {
     const user = userEvent.setup()
     const auth = createMemoryAuth({ users: { 'me@example.com': 'secret-pass' } })
     render(
-      <App repository={createMemoryStudySetRepository()} auth={auth} notes={createMemoryScratchNoteRepository()} />,
+      <App
+        repository={createMemoryStudySetRepository()}
+        auth={auth}
+        notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
+      />,
     )
 
     await screen.findByRole('heading', { name: 'ログイン' })
@@ -58,6 +64,7 @@ describe('ログイン', () => {
         repository={createMemoryStudySetRepository()}
         auth={createMemoryAuth()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
 
@@ -78,6 +85,7 @@ describe('ログイン', () => {
         repository={createMemoryStudySetRepository()}
         auth={createMemoryAuth({ confirmationRequired: true })}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
     await user.click(await screen.findByRole('button', { name: 'はじめての方はアカウントを作る' }))
@@ -97,6 +105,7 @@ describe('学習セットを編集する', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
 
@@ -124,6 +133,7 @@ describe('学習セットを編集する', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
 
@@ -140,6 +150,7 @@ describe('学習セットを編集する', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
     expect(await screen.findByRole('button', { name: '1枚目を上へ' })).toBeDisabled()
@@ -156,6 +167,7 @@ describe('学習セットを削除する', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
 
@@ -175,6 +187,7 @@ describe('学習セットを削除する', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
 

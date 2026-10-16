@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createMemoryAuth } from './lib/auth'
+import { createMemoryCreditRepository } from './lib/creditRepository'
 import type { StudySet } from './lib/studySet'
 import { createMemoryScratchNoteRepository } from './lib/scratchNoteRepository'
 import { createMemoryStudySetRepository } from './lib/studySetRepository'
@@ -38,7 +39,14 @@ describe('通常モード', () => {
   it('間違えた問題は2周目にもう一度出る。点数は1周目で、記録が保存される', async () => {
     const user = userEvent.setup()
     const repo = createMemoryStudySetRepository([sample()])
-    render(<App repository={repo} auth={signedIn()} notes={createMemoryScratchNoteRepository()} />)
+    render(
+      <App
+        repository={repo}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
+      />,
+    )
     await start(user, '通常モード')
 
     expect(screen.getByText('먹다')).toBeInTheDocument()
@@ -82,7 +90,14 @@ describe('テストモードと「正解にする」', () => {
   it('不正解を「正解にする」と点数に入り、記録には「機械は不正解・人が正解にした」と残る', async () => {
     const user = userEvent.setup()
     const repo = createMemoryStudySetRepository([sample()])
-    render(<App repository={repo} auth={signedIn()} notes={createMemoryScratchNoteRepository()} />)
+    render(
+      <App
+        repository={repo}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
+      />,
+    )
     await start(user, 'テストモード')
 
     await user.type(answerBox(), '食べる。{Enter}') // 句点つき：完全一致なので不正解
@@ -110,6 +125,7 @@ describe('徹底モード', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
     await start(user, '徹底モード')
@@ -134,6 +150,7 @@ describe('逆向き・日本語入力', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
     await start(user, 'テストモード', { reverse: true })
@@ -150,6 +167,7 @@ describe('逆向き・日本語入力', () => {
         repository={createMemoryStudySetRepository([sample()])}
         auth={signedIn()}
         notes={createMemoryScratchNoteRepository()}
+        credits={createMemoryCreditRepository()}
       />,
     )
     await start(user, 'テストモード')
@@ -169,6 +187,7 @@ it('記録の保存に失敗したら、そう伝えてもう一度保存でき�
       repository={createMemoryStudySetRepository([sample()], { failRecord: true })}
       auth={signedIn()}
       notes={createMemoryScratchNoteRepository()}
+      credits={createMemoryCreditRepository()}
     />,
   )
   await start(user, 'テストモード')

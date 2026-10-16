@@ -131,6 +131,20 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['answer_logs']['Insert']>
         Relationships: []
       }
+      credit_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          kind: string
+          session_id: string | null
+          created_at: string
+        }
+        // ブラウザからは書き込めない（DB の権限で禁止している）。型の形だけ書いておく
+        Insert: { id?: string; user_id?: string; amount: number; kind: string; session_id?: string | null }
+        Update: Partial<Database['public']['Tables']['credit_transactions']['Insert']>
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: {
@@ -148,7 +162,11 @@ export type Database = {
       }
       record_study_session: {
         Args: { p_set_id: string; p_mode: string; p_direction: string; p_started_at: string; p_attempts: Json }
-        Returns: string
+        Returns: Json // { session_id: string; credits: number }
+      }
+      credit_balance: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
     }
     Enums: { [_ in never]: never }

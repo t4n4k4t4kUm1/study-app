@@ -1,9 +1,12 @@
 // 画面全体。ログインしていなければログイン画面を、していれば URL の # に合わせたページを出す。
 import { QuickMemo } from './components/QuickMemo'
 import type { AuthClient, Session } from './lib/auth'
+import type { CreditRepository } from './lib/creditRepository'
+import { formatCredits } from './lib/credits'
 import { href, type Route } from './lib/router'
 import type { ScratchNoteRepository } from './lib/scratchNoteRepository'
 import type { StudySetRepository } from './lib/studySetRepository'
+import { useCreditBalance } from './lib/useCreditBalance'
 import { useHashRoute } from './lib/useHashRoute'
 import { useSession } from './lib/useSession'
 import { EditSetPage } from './pages/EditSetPage'
@@ -19,13 +22,14 @@ type Props = {
   repository: StudySetRepository | null
   auth: AuthClient | null
   notes: ScratchNoteRepository | null
+  credits: CreditRepository | null
 }
 
-export default function App({ repository, auth, notes }: Props) {
+export default function App({ repository, auth, notes, credits }: Props) {
   return (
     <div className="app">
-      {repository && auth && notes ? (
-        <Main repository={repository} auth={auth} notes={notes} />
+      {repository && auth && notes && credits ? (
+        <Main repository={repository} auth={auth} notes={notes} credits={credits} />
       ) : (
         <>
           <Header session={null} />
@@ -42,17 +46,21 @@ function Main({
   repository,
   auth,
   notes,
+  credits,
 }: {
   repository: StudySetRepository
   auth: AuthClient
   notes: ScratchNoteRepository
+  credits: CreditRepository
 }) {
   const route = useHashRoute()
   const session = useSession(auth)
+  const balance = useCreditBalance(credits, session.status === 'signedIn' ? session.session.userId : null)
   return (
     <>
       <Header
         session={session.status === 'signedIn' ? session.session : null}
+        credits={balance}
         onSignOut={() => auth.signOut().catch(() => undefined)}
       />
       <main>
@@ -60,7 +68,13 @@ function Main({
         {session.status === 'signedOut' && <LoginPage auth={auth} />}
         {/* key にユーザーの id を渡すと、別の人がログインしたときに画面の状態がすべて作り直される */}
         {session.status === 'signedIn' && (
-          <Page key={session.session.userId} route={route} repository={repository} notes={notes} />
+          <Page
+            key={session.session.userId}
+            route={route}
+            repository={repository}
+            notes={notes}
+            onCreditsChange={balance.refresh}
+          />
         )}
       </main>
       {/* どの画面でも右下に「メモ」ボタン（メモの画面そのものでは出さない） */}
@@ -71,7 +85,17 @@ function Main({
   )
 }
 
-function Header({ session, onSignOut }: { session: Session | null; onSignOut?: () => void }) {
+type CreditDisplay = { balance: number | null; error: boolean }
+
+function Header({
+  session,
+  credits,
+  onSignOut,
+}: {
+  session: Session | null
+  credits?: CreditDisplay
+  onSignOut?: () => void
+}) {
   return (
     <header className="site-header">
       <a href="#/" className="brand">
@@ -85,6 +109,7 @@ function Header({ session, onSignOut }: { session: Session | null; onSignOut?: (
       )}
       {session && (
         <div className="account">
+          {credits && <CreditBalance {...credits} />}
           <span className="account-email">{session.email}</span>
           <button type="button" className="link-button" onClick={onSignOut}>
             ログアウト
@@ -95,14 +120,28 @@ function Header({ session, onSignOut }: { session: Session | null; onSignOut?: (
   )
 }
 
+// 右上の「所持クレジット」。読み込み中は「…」、読めなかったら「—」
+function CreditBalance({ balance, error }: CreditDisplay) {
+  const text = balance !== null ? formatCredits(balance) : error ? '—' : '…'
+  return (
+    <span className="credit-balance" title={error ? 'クレジットを読み込めませんでした' : '所持クレジット'}>
+      <span className="coin" aria-hidden="true" />
+      <span className="visually-hidden">所持クレジット </span>
+      <span className="credit-amount">{text}</span>
+    </span>
+  )
+}
+
 function Page({
   route,
   repository,
   notes,
+  onCreditsChange,
 }: {
   route: Route
   repository: StudySetRepository
   notes: ScratchNoteRepository
+  onCreditsChange: () => void
 }) {
   switch (route.name) {
     case 'home':
@@ -119,7 +158,7 @@ function Page({
     case 'edit':
       return <EditSetPage key={route.id} repository={repository} id={route.id} />
     case 'typing':
-      return <TypingPage key={route.id} repository={repository} id={route.id} />
+      return <TypingPage key={route.id} repository={repository} id={route.id} onCreditsChange={onCreditsChange} />
     case 'notFound':
       return (
         <section className="notice">

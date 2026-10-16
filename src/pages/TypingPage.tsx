@@ -1,5 +1,6 @@
 // キーボードで答えて学ぶ画面。「はじめる前の設定」→「出題」→「結果」の3つの場面がある。
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
+import { CREDITS_PER_SELF_JUDGED, CREDITS_PER_VERIFIED, formatCredits } from '../lib/credits'
 import { range, shuffle } from '../lib/deck'
 import { exactJudge, type Judge } from '../lib/judge'
 import { href } from '../lib/router'
@@ -25,10 +26,12 @@ export function TypingPage({
   repository,
   id,
   judge = exactJudge,
+  onCreditsChange,
 }: {
   repository: StudySetRepository
   id: string
   judge?: Judge // 判定係。将来ここを差し替えれば、ゆるい判定や AI の判定にできる
+  onCreditsChange?: () => void // クレジットが増えたことを知らせる先（右上の残高を読み込み直す）
 }) {
   const state = useStudySet(repository, id)
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -44,6 +47,7 @@ export function TypingPage({
       settings={settings}
       judge={judge}
       repository={repository}
+      onCreditsChange={onCreditsChange}
       onAgain={() => setRunCount((n) => n + 1)}
       onChangeSettings={() => setSettings(null)}
     />
@@ -110,13 +114,14 @@ function TypingStart({ set, onStart }: { set: StudySet; onStart: (s: Settings) =
 
 // ---------------- 出題と結果 ----------------
 
-type SaveState = { status: 'saving' } | { status: 'saved' } | { status: 'error'; message: string }
+type SaveState = { status: 'saving' } | { status: 'saved'; credits: number } | { status: 'error'; message: string }
 
 function TypingRun({
   set,
   settings,
   judge,
   repository,
+  onCreditsChange,
   onAgain,
   onChangeSettings,
 }: {
@@ -124,6 +129,7 @@ function TypingRun({
   settings: Settings
   judge: Judge
   repository: StudySetRepository
+  onCreditsChange?: () => void
   onAgain: () => void
   onChangeSettings: () => void
 }) {
@@ -156,7 +162,10 @@ function TypingRun({
         startedAt: startedAt.current,
         attempts: state.attempts,
       })
-      .then(() => setSaveState({ status: 'saved' }))
+      .then(({ credits }) => {
+        setSaveState({ status: 'saved', credits })
+        if (credits > 0) onCreditsChange?.()
+      })
       .catch((e: unknown) =>
         setSaveState({ status: 'error', message: e instanceof Error ? e.message : '記録を保存できませんでした' }),
       )
@@ -224,6 +233,7 @@ function TypingRun({
             {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
             {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
           </p>
+          {saveState.status === 'saved' && <EarnedCredits credits={saveState.credits} />}
           <p className={`save-status ${saveState.status}`}>
             {saveState.status === 'saving' && '記録を保存しています…'}
             {saveState.status === 'saved' && '記録を保存しました'}
@@ -233,6 +243,8 @@ function TypingRun({
                 <button type="button" className="link-button" onClick={save}>
                   もう一度保存する
                 </button>
+                <br />
+                保存できるまで、クレジットはもらえません。
               </>
             )}
           </p>
@@ -392,6 +404,24 @@ function TypingRun({
         </div>
       )}
     </section>
+  )
+}
+
+// もらえたクレジット。計算の決まりも小さく添える
+function EarnedCredits({ credits }: { credits: number }) {
+  return (
+    <div className="earned">
+      {credits > 0 ? (
+        <p className="earned-value">
+          <span className="coin" aria-hidden="true" />+{formatCredits(credits)} クレジット
+        </p>
+      ) : (
+        <p className="earned-value none">今回はクレジットなし</p>
+      )}
+      <p className="hint">
+        1周目の正解1問につき {CREDITS_PER_VERIFIED}（「正解にする」は {CREDITS_PER_SELF_JUDGED}）×（0.5 ＋ 正答率）
+      </p>
+    </div>
   )
 }
 
