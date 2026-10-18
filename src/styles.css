@@ -158,6 +158,15 @@ code {
   margin: 0 auto;
   padding: 0 16px 112px; /* 下は右下の「メモ」ボタンに隠れない分あけておく */
 }
+/* 画面のいちばん下のバージョン。読めれば十分なので、小さく薄く */
+.app-version {
+  margin-top: 56px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- すりガラス（共通） ---------- */
 .site-header,

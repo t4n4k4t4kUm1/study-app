@@ -2,6 +2,7 @@
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { pageVariants, spring } from './components/motion'
 import { QuickMemo } from './components/QuickMemo'
+import { APP_VERSION } from './lib/version'
 import type { AuthClient, Session } from './lib/auth'
 import { href, type Route } from './lib/router'
 import type { ScratchNoteRepository } from './lib/scratchNoteRepository'
@@ -40,6 +41,8 @@ export default function App({ repository, auth, notes }: Props) {
             </main>
           </>
         )}
+        {/* 画面のいちばん下に、小さくバージョンを出す（どの版が公開されているかを確かめるため） */}
+        <footer className="app-version">学習アプリ v{APP_VERSION}</footer>
       </div>
     </MotionConfig>
   )
