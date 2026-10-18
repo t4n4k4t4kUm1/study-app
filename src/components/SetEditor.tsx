@@ -1,9 +1,12 @@
 // 学習セットの入力フォーム。「作る」画面と「編集」画面の両方で使う共通の部品。
 // タイトル・説明と、問題・答えの組（カード）を何枚でも入力でき、ドラッグか ↑↓ ボタンで並べ替えられる。
+// 「まとめて貼り付け」（BulkPaste）で、たくさんのカードを一度に足すこともできる。
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { countNonEmptyRows, mergeIntoRows } from '../lib/bulkImport'
 import { moveItem, shouldMove } from '../lib/reorder'
 import { LIMITS, parseSetDraft, type CardDraft, type NewStudySet } from '../lib/studySet'
+import { BulkPaste } from './BulkPaste'
 import { spring } from './motion'
 
 // key：React が行を見分けるための番号。行を消したり並べ替えたりしても入力内容がずれないように、
@@ -29,6 +32,8 @@ export function SetEditor({ heading, backLink, initial, submitLabel, onSubmit }:
   const [error, setError] = useState<{ message: string; cardIndex?: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [draggingKey, setDraggingKey] = useState<number | null>(null) // 見た目（半透明）用
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkNotice, setBulkNotice] = useState<string | null>(null) // 「◯枚を追加しました」
 
   const nextKey = useRef(initial.cards.length)
   const formRef = useRef<HTMLFormElement>(null)
@@ -49,6 +54,14 @@ export function SetEditor({ heading, backLink, initial, submitLabel, onSubmit }:
     const key = nextKey.current++
     focusKeyAfterRender.current = key
     setRows((prev) => [...prev, { key, question: '', answer: '' }])
+  }
+
+  // まとめて貼り付けで読めたカードを足す。空の行を先に埋め、残りは最後に足す
+  function addBulk(cards: { question: string; answer: string }[]) {
+    setRows((prev) => mergeIntoRows(prev, cards, (c) => ({ key: nextKey.current++, ...c })))
+    setBulkOpen(false)
+    setError(null) // エラーの行番号がずれるので消す
+    setBulkNotice(`${cards.length}枚を追加しました。まだ保存はされていません`)
   }
 
   function updateRow(key: number, field: 'question' | 'answer', value: string) {
@@ -272,9 +285,32 @@ export function SetEditor({ heading, backLink, initial, submitLabel, onSubmit }:
           })}
         </AnimatePresence>
       </ol>
-      <button type="button" className="button add-row" onClick={addRow}>
-        ＋ カードを追加
-      </button>
+      <div className="row-tools">
+        <button type="button" className="button add-row" onClick={addRow}>
+          ＋ カードを追加
+        </button>
+        <button
+          type="button"
+          className="button add-row"
+          onClick={() => {
+            setBulkOpen((o) => !o)
+            setBulkNotice(null)
+          }}
+          aria-expanded={bulkOpen}
+        >
+          まとめて貼り付け
+        </button>
+      </div>
+      <AnimatePresence>
+        {bulkOpen && (
+          <BulkPaste currentCount={countNonEmptyRows(rows)} onAdd={addBulk} onClose={() => setBulkOpen(false)} />
+        )}
+      </AnimatePresence>
+      {bulkNotice && (
+        <p className="info bulk-notice" role="status">
+          {bulkNotice}
+        </p>
+      )}
       <p className="hint">
         ⠿ をつかんでドラッグするか、↑↓ で並べ替えられます。最後のカードの「答え」で Tab
         を押すと次のカードが増えます。Ctrl+Enter で保存。

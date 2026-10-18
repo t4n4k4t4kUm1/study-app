@@ -611,6 +611,131 @@ input[type='radio'] {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--accent);
 }
+.row-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.row-tools .add-row {
+  margin-top: 0;
+}
+
+/* まとめて貼り付け */
+.bulk-paste {
+  margin-top: 12px;
+}
+.bulk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bulk-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.bulk-paste .hint {
+  margin: 0;
+}
+.bulk-separators {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+}
+.bulk-separators legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.bulk-separators .check {
+  margin-right: 0;
+}
+.bulk-custom {
+  width: 8em;
+  padding: 6px 10px;
+}
+.bulk-text {
+  /* 中身に合わせて伸ばすと、長い行で横にはみ出し、何百行も貼ると縦にも伸び続けるので、大きさは固定してスクロールさせる */
+  field-sizing: fixed;
+  height: 220px;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 8; /* タブが入っていることが見て分かるように、幅を広めに */
+}
+.bulk-status {
+  display: grid;
+  gap: 8px;
+}
+.bulk-status:empty {
+  display: none;
+}
+.bulk-status p {
+  margin: 0;
+}
+.bulk-errors {
+  margin: 0;
+  padding: 10px 14px 10px 34px;
+  border-radius: 12px;
+  background: var(--error-soft);
+  color: var(--error);
+  font-size: 0.9rem;
+}
+.bulk-preview {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.bulk-preview li {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--field);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bulk-preview .q,
+.bulk-preview .a {
+  /* 確認用なので、長い問題は3行で切る（全文はフォームに入ってから見られる） */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+.bulk-preview .a {
+  color: var(--muted);
+}
+.bulk-preview .more {
+  display: block;
+  background: none;
+  color: var(--muted);
+}
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+.bulk-actions .hint {
+  margin: 0;
+}
+.bulk-notice {
+  margin-top: 12px;
+}
+
 .form-actions {
   margin-top: 20px;
   display: flex;
