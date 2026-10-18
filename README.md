@@ -145,4 +145,5 @@ src/
 supabase/migrations/          DB の変更履歴（SQL）
 test-sets/                    検証用の学習セット（貼り付け用のファイル。使い方は test-sets/README.md）
 AGENTS.md                     AI エージェント向けのルール
+CHANGELOG.md                  変更履歴とバージョンの数え方（いまは 0.y.z のベータ版）
 ```
