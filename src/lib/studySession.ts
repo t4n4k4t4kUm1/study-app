@@ -4,12 +4,13 @@ import type { Attempt, TypingMode } from './typing'
 /** forward：問題を見て答えを打つ / reverse：答えを見て問題を打つ */
 export type Direction = 'forward' | 'reverse'
 
-/** どの形式で学んだか。typing：入力（キーボードで答える） / choice：4択 */
-export type StudyMethod = 'typing' | 'choice'
+/** どの形式で学んだか。typing：入力（キーボードで答える） / choice：4択 / match：マッチ（組み合わせを選ぶ） */
+export type StudyMethod = 'typing' | 'choice' | 'match'
 
 export const METHOD_LABELS: Record<StudyMethod, string> = {
   typing: '入力',
   choice: '4択',
+  match: 'マッチ',
 }
 
 /** 保存するときに渡すもの */
@@ -53,4 +54,12 @@ export function formatJst(iso: string): string {
 /** 正答率（%）。0問なら 0 */
 export function percent(correct: number, total: number): number {
   return total === 0 ? 0 : Math.round((correct / total) * 100)
+}
+
+/** かかった時間を「42秒」「1分05秒」の形にする（ミリ秒から） */
+export function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000))
+  const min = Math.floor(total / 60)
+  const sec = total % 60
+  return min === 0 ? `${sec}秒` : `${min}分${String(sec).padStart(2, '0')}秒`
 }

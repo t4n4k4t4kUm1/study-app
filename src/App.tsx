@@ -14,6 +14,7 @@ import { EditSetPage } from './pages/EditSetPage'
 import { FlashcardsPage } from './pages/FlashcardsPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { MatchPage } from './pages/MatchPage'
 import { NewSetPage } from './pages/NewSetPage'
 import { NotesPage } from './pages/NotesPage'
 import { SetPage } from './pages/SetPage'
@@ -170,6 +171,8 @@ function Page({
       return <TypingPage repository={repository} id={route.id} />
     case 'choice':
       return <ChoicePage repository={repository} id={route.id} />
+    case 'match':
+      return <MatchPage repository={repository} id={route.id} />
     case 'notFound':
       return (
         <section className="notice">

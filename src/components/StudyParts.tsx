@@ -1,10 +1,10 @@
-// 「入力」と「4択」で共通の部品：はじめる前の設定、出題中の上の部分、結果の画面（記録の保存は src/lib/useSessionSaver.ts）。
+// 「入力」「4択」「マッチ」で共通の部品：はじめる前の設定、出題中の上の部分、結果の画面（記録の保存は src/lib/useSessionSaver.ts）。
 // どちらも「問題を1つずつ出し、間違えたらもう一度」という同じ流れ（src/lib/typing.ts）で進むので、前後の画面も同じにしている。
 import { motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
-import { MODE_LABELS, percent } from '../lib/studySession'
+import { formatDuration, MODE_LABELS, percent } from '../lib/studySession'
 import { firstRoundMistakes, firstRoundScore, type TypingMode, type TypingState } from '../lib/typing'
 import type { SaveState, StudySettings } from '../lib/useSessionSaver'
 import { itemVariants, listVariants, softSpring, spring } from './motion'
@@ -18,14 +18,17 @@ export function StudyStart({
   modeDescriptions,
   reverseLabel,
   hint,
+  modes = ['normal', 'test', 'thorough'],
   onStart,
 }: {
   set: StudySet
   title: string
   lead: string
-  modeDescriptions: Record<TypingMode, string>
+  modeDescriptions: Partial<Record<TypingMode, string>>
   reverseLabel: string
   hint?: string
+  /** 選べるモード（マッチは「通常」と「テスト」だけ）。省略したら3つ全部 */
+  modes?: readonly TypingMode[]
   onStart: (s: StudySettings) => void
 }) {
   const [mode, setMode] = useState<TypingMode>('normal')
@@ -42,7 +45,7 @@ export function StudyStart({
 
       <fieldset className="panel mode-choice">
         <legend>モード</legend>
-        {(['normal', 'test', 'thorough'] as const).map((m) => (
+        {modes.map((m) => (
           <label key={m} className={`mode-option${mode === m ? ' selected' : ''}`}>
             <input type="radio" name="mode" value={m} checked={mode === m} onChange={() => setMode(m)} />
             <span>
@@ -88,15 +91,18 @@ export function StudyResult({
   onAgain,
   onChangeSettings,
   emptyAnswerLabel,
+  elapsedMs,
 }: {
   set: StudySet
   settings: StudySettings
-  state: TypingState
+  state: Pick<TypingState, 'attempts' | 'round'>
   saveState: SaveState
   onRetrySave: () => void
   onAgain: () => void
   onChangeSettings: () => void
   emptyAnswerLabel: string // 空の答えをどう見せるか（入力：「（わからない）」）
+  /** かかった時間（マッチだけ。画面に出すだけで、記録には保存しない） */
+  elapsedMs?: number
 }) {
   const score = firstRoundScore(state)
   const mistakes = firstRoundMistakes(state)
@@ -132,6 +138,7 @@ export function StudyResult({
           {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
           {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
         </p>
+        {elapsedMs !== undefined && <p className="elapsed">かかった時間 {formatDuration(elapsedMs)}</p>}
         <p className={`save-status ${saveState.status}`}>
           {saveState.status === 'saving' && '記録を保存しています…'}
           {saveState.status === 'saved' && '記録を保存しました'}

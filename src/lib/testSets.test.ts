@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseBulk } from './bulkImport'
 import { buildChoices, choiceAvailability } from './choice'
+import { matchAvailability } from './match'
 import type { Card } from './studySet'
 
 // Vite の機能で、フォルダの中のファイルを文字のまま読み込む
@@ -41,9 +42,11 @@ describe('検証用セット（test-sets/）', () => {
     expect(r.cards).toHaveLength(count)
   })
 
-  it('01 は4択が使えない枚数、02 はちょうど使える枚数', () => {
+  it('01 は4択・マッチが使えない枚数、02 はちょうど使える枚数', () => {
     expect(choiceAvailability(read('01-three-cards.tsv').cards.length).ok).toBe(false)
     expect(choiceAvailability(read('02-four-cards.tsv').cards.length).ok).toBe(true)
+    expect(matchAvailability(read('01-three-cards.tsv').cards.length).ok).toBe(false)
+    expect(matchAvailability(read('02-four-cards.tsv').cards.length).ok).toBe(true)
   })
 
   it('04 は違う答えが3種類しかないので、選択肢は3つになる（逆向きなら4つ）', () => {

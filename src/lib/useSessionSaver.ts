@@ -1,9 +1,9 @@
-// 学習が終わったら、記録を1回だけ保存する部品（フック）。「入力」と「4択」で共通。
+// 学習が終わったら、記録を1回だけ保存する部品（フック）。「入力」「4択」「マッチ」で共通。
 import { useEffect, useRef, useState } from 'react'
 import type { StudySet } from './studySet'
 import type { StudySetRepository } from './studySetRepository'
 import type { Direction, StudyMethod } from './studySession'
-import type { TypingMode, TypingState } from './typing'
+import type { Attempt, TypingMode } from './typing'
 
 /** はじめる前の設定 */
 export type StudySettings = { mode: TypingMode; direction: Direction; shuffle: boolean }
@@ -25,7 +25,7 @@ export function useSessionSaver({
   set: StudySet
   method: StudyMethod
   settings: StudySettings
-  state: TypingState
+  state: { phase: string; attempts: Attempt[] } // 「終わったか」と「記録する答え」だけ見る
 }) {
   const [saveState, setSaveState] = useState<SaveState>({ status: 'saving' })
   const startedAt = useRef(new Date().toISOString())

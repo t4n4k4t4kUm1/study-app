@@ -1378,6 +1378,91 @@ input[type='radio'] {
 .choice.is-idle:disabled {
   opacity: 0.55;
 }
+/* ---------- マッチ ---------- */
+/* 机に2列で並べた札。左が問題、右が答え（4択の札と同じ形を使い、選んでいる・そろった、の見た目を足す） */
+.match-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+  align-items: start;
+}
+.match-col ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.match-col-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.match-tile {
+  min-height: 56px;
+}
+.match-tile .choice-text {
+  font-size: 1rem;
+}
+.match-tile.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--glass-strong));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent),
+    var(--lift-shadow);
+}
+.match-tile.is-selected .choice-key {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.match-tile.is-matched {
+  border-style: dashed;
+}
+.match-tile.is-matched .choice-key {
+  background: var(--good);
+  color: var(--on-accent);
+}
+.match-status {
+  min-height: 1.6em;
+  margin: 12px 0 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.match-status.correct {
+  color: var(--good);
+}
+.match-status.wrong {
+  color: var(--error);
+}
+.elapsed {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 560px) {
+  /* スマホでも2列のまま。札の余白と番号を小さくして、文字の場所を広く取る */
+  .match-board {
+    gap: 8px;
+  }
+  .match-tile {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+  .match-tile .choice-key {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+  .match-tile .choice-text {
+    font-size: 0.95rem;
+  }
+}
+
 .verdict-line {
   margin: 14px 0 0;
   font-weight: 700;

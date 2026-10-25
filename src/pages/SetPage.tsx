@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useId, useState } from 'react'
 import { itemVariants, listVariants, softSpring, spring } from '../components/motion'
 import { choiceAvailability } from '../lib/choice'
+import { matchAvailability } from '../lib/match'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
@@ -16,6 +17,7 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
   if (state.status !== 'ready') return <LoadStatus state={state} />
   const { set } = state
   const choice = choiceAvailability(set.cards.length)
+  const match = matchAvailability(set.cards.length)
 
   return (
     <>
@@ -48,6 +50,14 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
           </motion.a>
         ) : (
           <LockedMode name="4択" desc="4つから選ぶ" reason={choice.reason} />
+        )}
+        {match.ok ? (
+          <motion.a className="mode" href={href({ name: 'match', id: set.id })} variants={itemVariants}>
+            <span className="mode-name">マッチ</span>
+            <span className="mode-desc">組み合わせを選ぶ</span>
+          </motion.a>
+        ) : (
+          <LockedMode name="マッチ" desc="組み合わせを選ぶ" reason={match.reason} />
         )}
       </motion.div>
 

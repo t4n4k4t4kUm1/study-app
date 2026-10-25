@@ -64,13 +64,13 @@ export function lastAttempt(state: TypingState): Attempt | undefined {
 }
 
 /** 1周目の点数（「正解にする」を押したものも正解に数える） */
-export function firstRoundScore(state: TypingState): { correct: number; total: number } {
+export function firstRoundScore(state: Pick<TypingState, 'attempts'>): { correct: number; total: number } {
   const first = state.attempts.filter((a) => a.round === 1)
   return { correct: first.filter(isCorrect).length, total: first.length }
 }
 
 /** 1周目に間違えた答え（結果画面で見せる） */
-export function firstRoundMistakes(state: TypingState): Attempt[] {
+export function firstRoundMistakes(state: Pick<TypingState, 'attempts'>): Attempt[] {
   return state.attempts.filter((a) => a.round === 1 && !isCorrect(a))
 }
 
