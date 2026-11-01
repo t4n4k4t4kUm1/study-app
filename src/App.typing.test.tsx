@@ -85,7 +85,7 @@ describe('テストモードと「正解にする」', () => {
     render(<App repository={repo} auth={signedIn()} notes={createMemoryScratchNoteRepository()} />)
     await start(user, 'テストモード')
 
-    await user.type(answerBox(), '食べる。{Enter}') // 句点つき：完全一致なので不正解
+    await user.type(answerBox(), 'たべる{Enter}') // 漢字ではなくひらがな：ゆるい判定でも不正解
     expect(screen.getByRole('alert')).toHaveTextContent('不正解')
     await user.click(screen.getByRole('button', { name: '正解にする' }))
     expect(screen.getByRole('alert')).toHaveTextContent('正解にしました')
@@ -96,9 +96,91 @@ describe('テストモードと「正解にする」', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent('1 / 2') // テストモードは2周目なし
     expect(repo.recorded[0].attempts.map((a) => [a.given, a.judgedCorrect, a.overridden])).toEqual([
-      ['食べる。', false, true],
+      ['たべる', false, true],
       ['', false, false],
     ])
+  })
+})
+
+describe('ゆるい判定ときびしい判定', () => {
+  it('ふだんはゆるい判定。全角や句点の違いは正解になり、正しい書き方も出る', async () => {
+    const user = userEvent.setup()
+    const repo = createMemoryStudySetRepository([sample()])
+    render(<App repository={repo} auth={signedIn()} notes={createMemoryScratchNoteRepository()} />)
+    await start(user, 'テストモード')
+
+    await user.type(answerBox(), '食べる。{Enter}') // 句点つき
+    expect(screen.getByRole('alert')).toHaveTextContent('正解！')
+    expect(screen.getByText('正しい書き方：')).toHaveTextContent('正しい書き方：食べる')
+    await user.click(screen.getByRole('button', { name: /次へ/ }))
+
+    await user.type(answerBox(), '行く{Enter}') // ぴったり同じなら、正しい書き方は出さない
+    expect(screen.getByRole('alert')).toHaveTextContent('正解！')
+    expect(screen.queryByText('正しい書き方：')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /次へ/ }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('2 / 2')
+    expect(repo.recorded[0].attempts.map((a) => [a.given, a.judgedCorrect, a.overridden])).toEqual([
+      ['食べる。', true, false],
+      ['行く', true, false],
+    ])
+  })
+
+  it('「きびしく判定する」を選ぶと、句点の違いも不正解になり、結果に「きびしい判定」と出る', async () => {
+    const user = userEvent.setup()
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
+    await user.click(await screen.findByLabelText(/きびしく判定する/))
+    await start(user, 'テストモード')
+
+    await user.type(answerBox(), '食べる。{Enter}')
+    expect(screen.getByRole('alert')).toHaveTextContent('不正解')
+    await user.click(screen.getByRole('button', { name: /次へ/ }))
+    await user.type(answerBox(), '行く{Enter}')
+    await user.click(screen.getByRole('button', { name: /次へ/ }))
+    expect(await screen.findByRole('status')).toHaveTextContent('きびしい判定')
+  })
+
+  it('徹底モードの打ち直しも、ゆるい判定で確かめる', async () => {
+    const user = userEvent.setup()
+    render(
+      <App
+        repository={createMemoryStudySetRepository([sample()])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
+    await start(user, '徹底モード')
+    await user.type(answerBox(), 'たべる{Enter}')
+    expect(screen.getByRole('alert')).toHaveTextContent('不正解')
+    await user.type(screen.getByLabelText('正しい答えを打ち直してください'), '食べる。{Enter}')
+    expect(await screen.findByText('가다')).toBeInTheDocument() // 次の問題へ進んだ
+  })
+
+  it.each(['choice', 'match'])('%s の設定には「きびしく判定する」は出ない（選ぶ形式なので）', async (path) => {
+    const four: StudySet = {
+      ...sample(),
+      cards: [
+        ...sample().cards,
+        { id: 'c3', position: 2, question: '보다', answer: '見る' },
+        { id: 'c4', position: 3, question: '자다', answer: '寝る' },
+      ],
+    }
+    window.location.hash = `#/sets/${SET_ID}/${path}`
+    render(
+      <App
+        repository={createMemoryStudySetRepository([four])}
+        auth={signedIn()}
+        notes={createMemoryScratchNoteRepository()}
+      />,
+    )
+    expect(await screen.findByRole('button', { name: 'はじめる' })).toBeInTheDocument()
+    expect(screen.queryByLabelText(/きびしく判定する/)).not.toBeInTheDocument()
   })
 })
 

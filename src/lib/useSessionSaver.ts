@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { StudySet } from './studySet'
 import type { StudySetRepository } from './studySetRepository'
+import type { JudgeLevel } from './judge'
 import type { Direction, StudyMethod } from './studySession'
 import type { Attempt, TypingMode } from './typing'
 
-/** はじめる前の設定 */
-export type StudySettings = { mode: TypingMode; direction: Direction; shuffle: boolean }
+/** はじめる前の設定。judgeLevel（判定のきびしさ）は入力モードだけが使う（4択・マッチは選ぶ形式なので関係ない） */
+export type StudySettings = { mode: TypingMode; direction: Direction; shuffle: boolean; judgeLevel: JudgeLevel }
 
 export type SaveState = { status: 'saving' } | { status: 'saved' } | { status: 'error'; message: string }
 

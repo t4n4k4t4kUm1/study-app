@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseBulk } from './bulkImport'
 import { buildChoices, choiceAvailability } from './choice'
+import { exactJudge, lenientJudge } from './judge'
 import { matchAvailability } from './match'
 import type { Card } from './studySet'
 
@@ -25,7 +26,7 @@ const EXPECTED_COUNTS: Record<string, number> = {
   '02-four-cards.tsv': 4,
   '03-korean-verbs-20.tsv': 20,
   '04-duplicate-answers.tsv': 7,
-  '05-answer-variants.tsv': 10,
+  '05-answer-variants.tsv': 11,
   '06-long-and-multiline.tsv': 9,
   '07-times-table-100.tsv': 100,
 }
@@ -55,6 +56,29 @@ describe('検証用セット（test-sets/）', () => {
     expect(buildChoices(cards, 'c0', 'forward')).toHaveLength(3)
     expect(buildChoices(cards, 'c0', 'reverse')).toHaveLength(4)
   })
+
+  // README の「05『ゆれ』」の表と同じ。上から順に、05 のカードに対して [打つもの, きびしい判定, ゆるい判定]
+  const VARIANTS: [string, boolean, boolean][] = [
+    ['２', false, true],
+    ['　東京　', true, true],
+    ['Apple', false, true],
+    ['ice  cream', false, true],
+    ['コンピュータ', false, false],
+    ['ガッコウ', false, false],
+    ['ハイフン', true, true],
+    ['감사합니다', true, true],
+    ['赤 黄', true, true],
+    ['AM', false, true],
+    ['食べる。', false, true],
+  ]
+  it.each(VARIANTS.map((row, i) => [...row, i] as const))(
+    '05：「%s」は、きびしい判定で %s、ゆるい判定で %s',
+    (given, strict, lenient, i) => {
+      const answer = read('05-answer-variants.tsv').cards[i].answer
+      expect(exactJudge(answer, given)).toBe(strict)
+      expect(lenientJudge(answer, given)).toBe(lenient)
+    },
+  )
 
   it('06 のセル内の改行・"" ・500文字ちょうど・前後の空白が、思ったとおりに読める', () => {
     const cards = read('06-long-and-multiline.tsv').cards

@@ -19,6 +19,7 @@ export function StudyStart({
   reverseLabel,
   hint,
   modes = ['normal', 'test', 'thorough'],
+  judgeOption = false,
   onStart,
 }: {
   set: StudySet
@@ -29,11 +30,14 @@ export function StudyStart({
   hint?: string
   /** 選べるモード（マッチは「通常」と「テスト」だけ）。省略したら3つ全部 */
   modes?: readonly TypingMode[]
+  /** 「きびしく判定する」を出すか（入力モードだけ） */
+  judgeOption?: boolean
   onStart: (s: StudySettings) => void
 }) {
   const [mode, setMode] = useState<TypingMode>('normal')
   const [reverse, setReverse] = useState(false)
   const [shuffled, setShuffled] = useState(true)
+  const [strict, setStrict] = useState(false)
 
   return (
     <section className="typing">
@@ -65,13 +69,26 @@ export function StudyStart({
           <input type="checkbox" checked={shuffled} onChange={(e) => setShuffled(e.target.checked)} />
           順番をシャッフル
         </label>
+        {judgeOption && (
+          <label className="check">
+            <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} />
+            きびしく判定する（全角・半角、大文字・小文字なども区別）
+          </label>
+        )}
       </div>
       {hint && <p className="hint">{hint}</p>}
 
       <button
         type="button"
         className="button primary start-button"
-        onClick={() => onStart({ mode, direction: reverse ? 'reverse' : 'forward', shuffle: shuffled })}
+        onClick={() =>
+          onStart({
+            mode,
+            direction: reverse ? 'reverse' : 'forward',
+            shuffle: shuffled,
+            judgeLevel: strict ? 'strict' : 'lenient',
+          })
+        }
         autoFocus
       >
         はじめる
@@ -136,6 +153,7 @@ export function StudyResult({
         </p>
         <p className="muted">
           {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
+          {settings.judgeLevel === 'strict' && '・きびしい判定'}
           {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
         </p>
         {elapsedMs !== undefined && <p className="elapsed">かかった時間 {formatDuration(elapsedMs)}</p>}

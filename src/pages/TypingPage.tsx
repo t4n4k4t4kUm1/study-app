@@ -4,7 +4,7 @@ import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } 
 import { shake, spring } from '../components/motion'
 import { StudyPromptHeader, StudyResult, StudyStart } from '../components/StudyParts'
 import { range, shuffle } from '../lib/deck'
-import { exactJudge, type Judge } from '../lib/judge'
+import { isExactMatch, judgeFor, type Judge } from '../lib/judge'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
 import { currentCardId, lastAttempt, isCorrect, startTyping, typingReducer, type TypingMode } from '../lib/typing'
@@ -17,11 +17,11 @@ type Settings = StudySettings
 export function TypingPage({
   repository,
   id,
-  judge = exactJudge,
+  judge,
 }: {
   repository: StudySetRepository
   id: string
-  judge?: Judge // 判定係。将来ここを差し替えれば、ゆるい判定や AI の判定にできる
+  judge?: Judge // 判定係。省略したら、はじめる前の設定（ゆるい／きびしい）で選ぶ。AI の判定などに差し替えられる
 }) {
   const state = useStudySet(repository, id)
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -35,7 +35,7 @@ export function TypingPage({
       key={runCount}
       set={set}
       settings={settings}
-      judge={judge}
+      judge={judge ?? judgeFor(settings.judgeLevel)}
       repository={repository}
       onAgain={() => setRunCount((n) => n + 1)}
       onChangeSettings={() => setSettings(null)}
@@ -59,7 +59,8 @@ function TypingStart({ set, onStart }: { set: StudySet; onStart: (s: Settings) =
       lead={`${set.cards.length}問。答えをキーボードで打って、Enter で答え合わせします。`}
       modeDescriptions={MODE_DESCRIPTIONS}
       reverseLabel="逆向き（答えを見て、問題を打つ）"
-      hint="判定は完全一致です（前後の空白だけは無視）。打ち間違いなどは「正解にする」で直せます。"
+      hint="ふだんは「ゆるい判定」です。全角と半角、大文字と小文字、空白の数、文末の句読点の違いは正解にします。ひらがなとカタカナ、伸ばす音の有無は区別します。打ち間違いなどは「正解にする」で直せます。"
+      judgeOption
       onStart={onStart}
     />
   )
@@ -250,6 +251,7 @@ function TypingRun({
           >
             {resultCorrect ? (last.overridden ? '正解にしました' : '正解！') : '不正解'}
           </motion.p>
+          {last.judgedCorrect && !last.overridden && <ExactForm expected={expected} given={last.given} />}
           {!resultCorrect && <Answers given={last.given} expected={expected} />}
           {resultCorrect && last.overridden && <Answers given={last.given} expected={expected} />}
           <div className="typing-actions">
@@ -270,6 +272,16 @@ function TypingRun({
         </motion.div>
       )}
     </section>
+  )
+}
+
+/** ゆるい判定で正解したが、書き方は正解と少し違う（例：Apple と apple）ときだけ、正しい書き方を見せて覚えてもらう */
+function ExactForm({ expected, given }: { expected: string; given: string }) {
+  if (isExactMatch(expected, given)) return null
+  return (
+    <p className="exact-form">
+      正しい書き方：<span>{expected}</span>
+    </p>
   )
 }
 
