@@ -3,7 +3,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 import type { NewStudySet, StudySet, StudySetSummary } from './studySet'
-import type { NewStudySession, StudySessionSummary } from './studySession'
+import type { Direction, NewStudySession, StudySessionSummary } from './studySession'
+import type { CardResult } from './weak'
 
 export interface StudySetRepository {
   /** 学習セットの一覧（新しい順） */
@@ -20,7 +21,14 @@ export interface StudySetRepository {
   recordSession(session: NewStudySession): Promise<void>
   /** そのセットの最近の記録（新しい順） */
   listRecentSessions(setId: string, limit?: number): Promise<StudySessionSummary[]>
+  /** そのセットの、カードごとの1周目の結果（古い順）。苦手を選ぶのに使う（src/lib/weak.ts） */
+  listCardResults(setId: string): Promise<CardResult[]>
 }
+
+/** 一度に読む行の数。Supabase は1回に最大1000行までしか返さないので、それより多いときは何回かに分けて読む */
+const PAGE_SIZE = 1000
+/** 読みすぎを防ぐ上限（1000行 × 100回 = 10万行） */
+const MAX_PAGES = 100
 
 export function createSupabaseStudySetRepository(client: SupabaseClient<Database>): StudySetRepository {
   return {
@@ -108,16 +116,47 @@ export function createSupabaseStudySetRepository(client: SupabaseClient<Database
       // DB では method・mode・direction はただの文字列なので、決まった値だけが入っている前提で型を付ける
       return data as StudySessionSummary[]
     },
+
+    async listCardResults(setId) {
+      // answer_logs（1問ごとの答え）に、その答えの学習（study_sessions）をつなげて読む。
+      // !inner は「つながる学習があるものだけ」という意味で、study_sessions.set_id で「このセットの学習」に絞れる
+      const results: CardResult[] = []
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const from = page * PAGE_SIZE
+        const { data, error } = await client
+          .from('answer_logs')
+          .select('card_id, judged_correct, overridden, answered_at, study_sessions!inner(set_id, direction)')
+          .eq('study_sessions.set_id', setId)
+          .eq('round', 1)
+          .order('answered_at', { ascending: true })
+          .order('id', { ascending: true }) // 時刻が同じ行でも、読むたびに順番が変わらないように
+          .range(from, from + PAGE_SIZE - 1)
+        if (error) throw new Error(`記録を読み込めませんでした: ${error.message}`)
+        for (const row of data) {
+          results.push({
+            cardId: row.card_id,
+            // DB では direction はただの文字列なので、forward か reverse だけが入っている前提で型を付ける
+            direction: row.study_sessions.direction as Direction,
+            correct: row.judged_correct || row.overridden,
+            answeredAt: row.answered_at,
+          })
+        }
+        if (data.length < PAGE_SIZE) break
+      }
+      return results
+    },
   }
 }
 
 /** テスト用：メモリ上に保存する実装 */
 export function createMemoryStudySetRepository(
   initial: StudySet[] = [],
-  options: { failRecord?: boolean } = {},
+  // history：テストを始める前からあったことにする記録（苦手のテストで使う）
+  options: { failRecord?: boolean; history?: NewStudySession[] } = {},
 ): StudySetRepository & { recorded: NewStudySession[] } {
   const sets = initial.map((s) => ({ ...s, cards: [...s.cards] }))
   const recorded: NewStudySession[] = [] // テストで「何が保存されたか」を確かめるために外から見えるようにする
+  const allSessions = () => [...(options.history ?? []), ...recorded]
   let seq = 0
   return {
     recorded,
@@ -165,7 +204,7 @@ export function createMemoryStudySetRepository(
       recorded.push(session)
     },
     async listRecentSessions(setId, limit = 5) {
-      return recorded
+      return allSessions()
         .filter((r) => r.setId === setId)
         .map((r, i) => {
           const first = r.attempts.filter((a) => a.round === 1)
@@ -181,6 +220,20 @@ export function createMemoryStudySetRepository(
         })
         .reverse()
         .slice(0, limit)
+    },
+    async listCardResults(setId) {
+      return allSessions()
+        .filter((r) => r.setId === setId)
+        .flatMap((r) =>
+          r.attempts
+            .filter((a) => a.round === 1)
+            .map((a) => ({
+              cardId: a.cardId,
+              direction: r.direction,
+              correct: a.judgedCorrect || a.overridden,
+              answeredAt: a.answeredAt,
+            })),
+        )
     },
   }
 }

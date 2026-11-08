@@ -12,6 +12,7 @@ import type { StudySetRepository } from '../lib/studySetRepository'
 import { currentCardId, isCorrect, lastAttempt, startTyping, typingReducer, type TypingMode } from '../lib/typing'
 import { useSessionSaver, type StudySettings } from '../lib/useSessionSaver'
 import { useStudySet } from '../lib/useStudySet'
+import { studyIds } from '../lib/weak'
 import { LoadStatus } from './LoadStatus'
 
 export function ChoicePage({ repository, id }: { repository: StudySetRepository; id: string }) {
@@ -38,6 +39,7 @@ export function ChoicePage({ repository, id }: { repository: StudySetRepository;
     return (
       <StudyStart
         set={set}
+        repository={repository}
         title="4択で学ぶ"
         lead={`${set.cards.length}問。4つの選択肢から正しいものを選びます（クリックか、キーボードの 1〜4）。`}
         modeDescriptions={MODE_DESCRIPTIONS}
@@ -78,10 +80,14 @@ function ChoiceRun({
   onChangeSettings: () => void
 }) {
   const cardsById = useMemo(() => new Map(set.cards.map((c) => [c.id, c])), [set])
-  // 選択肢は、はじめに全部のカードの分を1回だけ作る（同じ問題が2周目に出ても、同じ並びにする）
+  // 選択肢は、はじめに全部のカードの分を1回だけ作る（同じ問題が2周目に出ても、同じ並びにする）。
+  // 「苦手だけ」でも、外れの選択肢はセット全体のカードから選ぶ（苦手が1枚でも4択にできる）
   const [choices] = useState(() => buildAllChoices(set.cards, settings.direction))
   const [state, dispatch] = useReducer(typingReducer, undefined, () => {
-    const ids = set.cards.map((c) => c.id)
+    const ids = studyIds(
+      set.cards.map((c) => c.id),
+      settings.weakIds,
+    )
     return startTyping(settings.mode, settings.shuffle ? shuffle(range(ids.length)).map((i) => ids[i]) : ids)
   })
   // 徹底モードで、この問題で選んで外れた選択肢（もう選べないように暗くする）

@@ -1125,6 +1125,14 @@ input[type='radio'] {
 .typing-options .check {
   margin-right: 0;
 }
+/* 選べないチェック（「苦手だけ」で苦手が0枚のときなど） */
+.check.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.weak-count {
+  color: var(--accent);
+}
 .start-button {
   margin-top: 20px;
   min-width: 220px;

@@ -8,8 +8,10 @@ import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
 import type { StudySetRepository } from '../lib/studySetRepository'
 import { formatJst, METHOD_LABELS, MODE_LABELS, percent, type StudySessionSummary } from '../lib/studySession'
+import { useCardResults } from '../lib/useCardResults'
 import { navigate } from '../lib/useHashRoute'
 import { useStudySet } from '../lib/useStudySet'
+import { weakCounts } from '../lib/weak'
 import { LoadStatus } from './LoadStatus'
 
 export function SetPage({ repository, id }: { repository: StudySetRepository; id: string }) {
@@ -31,7 +33,10 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
         </a>
       </div>
       {set.description && <p className="set-description">{set.description}</p>}
-      <p className="meta">{set.cards.length}枚</p>
+      <p className="meta">
+        {set.cards.length}枚
+        <WeakCount set={set} repository={repository} />
+      </p>
 
       <h2>学習する</h2>
       <motion.div className="modes" variants={listVariants} initial="hidden" animate="show">
@@ -75,6 +80,23 @@ export function SetPage({ repository, id }: { repository: StudySetRepository; id
 
       <DeleteSet set={set} repository={repository} />
     </>
+  )
+}
+
+// 苦手の枚数（「・苦手 3枚（逆向き 1枚）」）。苦手が1枚もなければ、何も出さない。
+// 苦手だけで学ぶときは、入力・4択・マッチの「はじめる前の設定」で「苦手だけ」を選ぶ
+function WeakCount({ set, repository }: { set: StudySet; repository: StudySetRepository }) {
+  const results = useCardResults(repository, set.id)
+  if (results.status !== 'ready') return null
+  const counts = weakCounts(
+    set.cards.map((c) => c.id),
+    results.results,
+  )
+  if (counts.forward === 0 && counts.reverse === 0) return null
+  return (
+    <span className="weak-count">
+      ・苦手 {counts.forward}枚{counts.reverse > 0 && `（逆向き ${counts.reverse}枚）`}
+    </span>
   )
 }
 

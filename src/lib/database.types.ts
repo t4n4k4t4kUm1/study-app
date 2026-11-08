@@ -131,7 +131,22 @@ export type Database = {
           answered_at?: string
         }
         Update: Partial<Database['public']['Tables']['answer_logs']['Insert']>
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'answer_logs_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'study_sessions'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'answer_logs_card_id_fkey'
+            columns: ['card_id']
+            isOneToOne: false
+            referencedRelation: 'cards'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: { [_ in never]: never }

@@ -10,6 +10,7 @@ import { range, shuffle } from '../lib/deck'
 import {
   buildBoard,
   currentBoard,
+  fillersFor,
   isLastBoard,
   MATCH_BOARD_SIZE,
   matchAvailability,
@@ -25,6 +26,7 @@ import type { StudySetRepository } from '../lib/studySetRepository'
 import { MODE_LABELS } from '../lib/studySession'
 import { useSessionSaver, type StudySettings } from '../lib/useSessionSaver'
 import { useStudySet } from '../lib/useStudySet'
+import { studyIds } from '../lib/weak'
 import { LoadStatus } from './LoadStatus'
 
 /** 右の列の札に付ける文字（キーボードの a〜f） */
@@ -54,6 +56,7 @@ export function MatchPage({ repository, id }: { repository: StudySetRepository; 
     return (
       <StudyStart
         set={set}
+        repository={repository}
         title="マッチで学ぶ"
         lead={`${set.cards.length}組。左の問題を選んでから、右の合う答えを選びます（1つの盤は最大${MATCH_BOARD_SIZE}組）。`}
         modes={MODES}
@@ -100,8 +103,12 @@ function MatchRun({
   const cardsById = useMemo(() => new Map(set.cards.map((c) => [c.id, c])), [set])
   const allIds = useMemo(() => set.cards.map((c) => c.id), [set])
   const [state, dispatch] = useReducer(matchReducer, undefined, () => {
-    const order = settings.shuffle ? shuffle(range(allIds.length)).map((i) => allIds[i]) : allIds
-    return startMatch(settings.mode as MatchMode, order)
+    // 「苦手だけ」で苦手が3組に足りないときは、ほかのカードで盤を埋める（埋めたカードは記録しない）
+    const ids = studyIds(allIds, settings.weakIds)
+    const fillers = settings.weakIds ? fillersFor(ids, allIds) : []
+    const all = [...ids, ...fillers]
+    const order = settings.shuffle ? shuffle(range(all.length)).map((i) => all[i]) : all
+    return startMatch(settings.mode as MatchMode, order, fillers)
   })
   const { saveState, save } = useSessionSaver({ repository, set, method: 'match', settings, state })
   const [flash, setFlash] = useState<Flash | null>(null)

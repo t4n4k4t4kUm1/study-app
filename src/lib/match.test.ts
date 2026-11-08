@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildBoard,
   currentBoard,
+  fillersFor,
   matchAvailability,
   matchReducer,
   planRetry,
@@ -205,5 +206,26 @@ describe('planRetry', () => {
     expect(planRetry(['a', 'b', 'c'], all, zero).fillers).toEqual([])
     const ids = Array.from({ length: 7 }, (_, i) => `c${i}`)
     expect(planRetry(ids, ids, zero).boards.map((b) => b.length)).toEqual([4, 3])
+  })
+})
+
+describe('苦手だけのマッチ（fillersFor と、埋め合わせつきの startMatch）', () => {
+  const all = ['a', 'b', 'c', 'd', 'e']
+
+  it('苦手が3枚未満なら、苦手以外のカードで3組まで埋める', () => {
+    const fillers = fillersFor(['a'], all, zero)
+    expect(fillers).toHaveLength(2)
+    expect(fillers).not.toContain('a')
+    expect(fillersFor(['a', 'b', 'c'], all, zero)).toEqual([])
+  })
+
+  it('埋め合わせのカードは、そろえても外しても記録しない', () => {
+    let s = startMatch('test', ['a', 'b', 'c'], ['b', 'c'])
+    s = pair(s, 'b', 'c') // 埋め合わせで外す
+    s = pair(s, 'a', 'a')
+    s = pair(s, 'b', 'b')
+    s = pair(s, 'c', 'c')
+    expect(s.attempts.map((a) => a.cardId)).toEqual(['a'])
+    expect(s.phase).toBe('cleared')
   })
 })

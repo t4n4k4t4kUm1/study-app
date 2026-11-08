@@ -4,15 +4,19 @@ import { motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { href } from '../lib/router'
 import type { StudySet } from '../lib/studySet'
+import type { StudySetRepository } from '../lib/studySetRepository'
 import { formatDuration, MODE_LABELS, percent } from '../lib/studySession'
 import { firstRoundMistakes, firstRoundScore, type TypingMode, type TypingState } from '../lib/typing'
+import { useCardResults } from '../lib/useCardResults'
 import type { SaveState, StudySettings } from '../lib/useSessionSaver'
+import { weakCardIds } from '../lib/weak'
 import { itemVariants, listVariants, softSpring, spring } from './motion'
 
 // ---------------- はじめる前の設定 ----------------
 
 export function StudyStart({
   set,
+  repository,
   title,
   lead,
   modeDescriptions,
@@ -23,6 +27,8 @@ export function StudyStart({
   onStart,
 }: {
   set: StudySet
+  /** 「苦手だけ」の枚数を出すために、記録を読む */
+  repository: StudySetRepository
   title: string
   lead: string
   modeDescriptions: Partial<Record<TypingMode, string>>
@@ -38,6 +44,26 @@ export function StudyStart({
   const [reverse, setReverse] = useState(false)
   const [shuffled, setShuffled] = useState(true)
   const [strict, setStrict] = useState(false)
+  const [onlyWeak, setOnlyWeak] = useState(false)
+
+  // 苦手なカード：記録から、いま選んでいる向きで「最後に1周目で間違えた」カードを選ぶ（src/lib/weak.ts）
+  const results = useCardResults(repository, set.id)
+  const direction = reverse ? 'reverse' : 'forward'
+  const weakIds =
+    results.status === 'ready'
+      ? weakCardIds(
+          set.cards.map((c) => c.id),
+          results.results,
+          direction,
+        )
+      : []
+  const canWeak = weakIds.length > 0
+  const weakLabel =
+    results.status === 'loading'
+      ? '読み込み中…'
+      : results.status === 'error'
+        ? '記録を読み込めませんでした'
+        : `${weakIds.length}枚`
 
   return (
     <section className="typing">
@@ -69,6 +95,15 @@ export function StudyStart({
           <input type="checkbox" checked={shuffled} onChange={(e) => setShuffled(e.target.checked)} />
           順番をシャッフル
         </label>
+        <label className={`check${canWeak ? '' : ' disabled'}`}>
+          <input
+            type="checkbox"
+            checked={onlyWeak && canWeak}
+            disabled={!canWeak}
+            onChange={(e) => setOnlyWeak(e.target.checked)}
+          />
+          苦手だけ（{weakLabel}）
+        </label>
         {judgeOption && (
           <label className="check">
             <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} />
@@ -76,6 +111,11 @@ export function StudyStart({
           </label>
         )}
       </div>
+      {results.status === 'ready' && !canWeak && (
+        <p className="hint">
+          {reverse ? '逆向きで' : ''}苦手なカードはまだありません。1周目で間違えたカードが、ここに入ります。
+        </p>
+      )}
       {hint && <p className="hint">{hint}</p>}
 
       <button
@@ -84,9 +124,10 @@ export function StudyStart({
         onClick={() =>
           onStart({
             mode,
-            direction: reverse ? 'reverse' : 'forward',
+            direction,
             shuffle: shuffled,
             judgeLevel: strict ? 'strict' : 'lenient',
+            weakIds: onlyWeak && canWeak ? weakIds : null,
           })
         }
         autoFocus
@@ -153,6 +194,7 @@ export function StudyResult({
         </p>
         <p className="muted">
           {MODE_LABELS[settings.mode]}モード{reverse ? '・逆向き' : ''}
+          {settings.weakIds && '・苦手だけ'}
           {settings.judgeLevel === 'strict' && '・きびしい判定'}
           {settings.mode === 'normal' && state.round > 1 && `・全部正解するまで${state.round}周`}
         </p>

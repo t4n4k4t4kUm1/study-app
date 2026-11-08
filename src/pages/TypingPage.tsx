@@ -10,6 +10,7 @@ import type { StudySetRepository } from '../lib/studySetRepository'
 import { currentCardId, lastAttempt, isCorrect, startTyping, typingReducer, type TypingMode } from '../lib/typing'
 import { useSessionSaver, type StudySettings } from '../lib/useSessionSaver'
 import { useStudySet } from '../lib/useStudySet'
+import { studyIds } from '../lib/weak'
 import { LoadStatus } from './LoadStatus'
 
 type Settings = StudySettings
@@ -29,7 +30,7 @@ export function TypingPage({
   if (state.status !== 'ready') return <LoadStatus state={state} />
   const { set } = state
 
-  if (!settings) return <TypingStart set={set} onStart={setSettings} />
+  if (!settings) return <TypingStart set={set} repository={repository} onStart={setSettings} />
   return (
     <TypingRun
       key={runCount}
@@ -51,10 +52,19 @@ const MODE_DESCRIPTIONS: Record<TypingMode, string> = {
   thorough: '間違えたら、正しい答えを打ち直すまで次に進めません',
 }
 
-function TypingStart({ set, onStart }: { set: StudySet; onStart: (s: Settings) => void }) {
+function TypingStart({
+  set,
+  repository,
+  onStart,
+}: {
+  set: StudySet
+  repository: StudySetRepository
+  onStart: (s: Settings) => void
+}) {
   return (
     <StudyStart
       set={set}
+      repository={repository}
       title="入力で学ぶ"
       lead={`${set.cards.length}問。答えをキーボードで打って、Enter で答え合わせします。`}
       modeDescriptions={MODE_DESCRIPTIONS}
@@ -85,7 +95,10 @@ function TypingRun({
 }) {
   const cardsById = useMemo(() => new Map(set.cards.map((c) => [c.id, c])), [set])
   const [state, dispatch] = useReducer(typingReducer, undefined, () => {
-    const ids = set.cards.map((c) => c.id)
+    const ids = studyIds(
+      set.cards.map((c) => c.id),
+      settings.weakIds,
+    )
     return startTyping(settings.mode, settings.shuffle ? shuffle(range(ids.length)).map((i) => ids[i]) : ids)
   })
   const [input, setInput] = useState('')

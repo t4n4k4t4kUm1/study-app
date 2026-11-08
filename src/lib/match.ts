@@ -106,13 +106,14 @@ export type MatchAction =
   // nextRound：通常モードで次の周に進むときの盤（並べ方や埋め合わせの選び方は乱数を使うので、画面側が planRetry で作る）
   | { type: 'next'; nextRound?: NextRound }
 
-export function startMatch(mode: MatchMode, order: string[]): MatchState {
+/** fillers：盤を埋めるために足したカード（記録しない）。「苦手だけ」で苦手が3組に足りないときに使う */
+export function startMatch(mode: MatchMode, order: string[], fillers: string[] = []): MatchState {
   return {
     mode,
     round: 1,
     boards: splitBoards(order),
     boardIndex: 0,
-    fillers: [],
+    fillers,
     selected: null,
     matched: [],
     usedTiles: [],
@@ -142,12 +143,17 @@ export function roundProgress(state: MatchState): { done: number; total: number 
  * 3組に足りなければ、ほかのカード（埋め合わせ。記録しない）で埋める。
  */
 export function planRetry(wrong: string[], allIds: string[], random: () => number = Math.random): NextRound {
-  const need = Math.max(0, MIN_BOARD_PAIRS - wrong.length)
-  const fillers = shuffle(
-    allIds.filter((id) => !wrong.includes(id)),
+  const fillers = fillersFor(wrong, allIds, random)
+  return { boards: splitBoards(shuffle([...wrong, ...fillers], random)), fillers }
+}
+
+/** ids で盤を作るとき、3組に足りない分の埋め合わせ（ids 以外のカードから、ばらばらに選ぶ） */
+export function fillersFor(ids: string[], allIds: string[], random: () => number = Math.random): string[] {
+  const need = Math.max(0, MIN_BOARD_PAIRS - ids.length)
+  return shuffle(
+    allIds.filter((id) => !ids.includes(id)),
     random,
   ).slice(0, need)
-  return { boards: splitBoards(shuffle([...wrong, ...fillers], random)), fillers }
 }
 
 export function matchReducer(state: MatchState, action: MatchAction): MatchState {

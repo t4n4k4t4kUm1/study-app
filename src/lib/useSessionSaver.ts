@@ -6,8 +6,17 @@ import type { JudgeLevel } from './judge'
 import type { Direction, StudyMethod } from './studySession'
 import type { Attempt, TypingMode } from './typing'
 
-/** はじめる前の設定。judgeLevel（判定のきびしさ）は入力モードだけが使う（4択・マッチは選ぶ形式なので関係ない） */
-export type StudySettings = { mode: TypingMode; direction: Direction; shuffle: boolean; judgeLevel: JudgeLevel }
+/**
+ * はじめる前の設定。judgeLevel（判定のきびしさ）は入力モードだけが使う（4択・マッチは選ぶ形式なので関係ない）。
+ * weakIds：「苦手だけ」を選んだときの、苦手なカード（はじめた時点のもの）。null なら全部のカード
+ */
+export type StudySettings = {
+  mode: TypingMode
+  direction: Direction
+  shuffle: boolean
+  judgeLevel: JudgeLevel
+  weakIds: string[] | null
+}
 
 export type SaveState = { status: 'saving' } | { status: 'saved' } | { status: 'error'; message: string }
 
