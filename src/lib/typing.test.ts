@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exactJudge } from './judge'
+import { isExactMatch } from './judge'
 import {
   currentCardId,
   firstRoundMistakes,
@@ -16,16 +16,16 @@ const ng: TypingAction = { type: 'submit', given: '誤', judgedCorrect: false, a
 const next: TypingAction = { type: 'next' }
 const run = (state: TypingState, ...actions: TypingAction[]) => actions.reduce(typingReducer, state)
 
-describe('exactJudge（完全一致）', () => {
+describe('isExactMatch（完全一致）', () => {
   it('同じなら正解、1文字でも違えば不正解', () => {
-    expect(exactJudge('食べる', '食べる')).toBe(true)
-    expect(exactJudge('食べる', 'たべる')).toBe(false)
-    expect(exactJudge('ABC', 'abc')).toBe(false) // 大文字・小文字も区別する
+    expect(isExactMatch('食べる', '食べる')).toBe(true)
+    expect(isExactMatch('食べる', 'たべる')).toBe(false)
+    expect(isExactMatch('ABC', 'abc')).toBe(false) // 大文字・小文字も区別する
   })
 
   it('前後の空白と、正解の中の改行だけは気にしない', () => {
-    expect(exactJudge('食べる', '  食べる ')).toBe(true)
-    expect(exactJudge('1行目\n2行目', '1行目 2行目')).toBe(true)
+    expect(isExactMatch('食べる', '  食べる ')).toBe(true)
+    expect(isExactMatch('1行目\n2行目', '1行目 2行目')).toBe(true)
   })
 })
 

@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseBulk } from './bulkImport'
 import { buildChoices, choiceAvailability } from './choice'
-import { exactJudge, lenientJudge } from './judge'
+import { isExactMatch, lenientJudge } from './judge'
 import { matchAvailability } from './match'
 import type { Card } from './studySet'
 
@@ -75,7 +75,7 @@ describe('検証用セット（test-sets/）', () => {
     '05：「%s」は、きびしい判定で %s、ゆるい判定で %s',
     (given, strict, lenient, i) => {
       const answer = read('05-answer-variants.tsv').cards[i].answer
-      expect(exactJudge(answer, given)).toBe(strict)
+      expect(isExactMatch(answer, given)).toBe(strict)
       expect(lenientJudge(answer, given)).toBe(lenient)
     },
   )

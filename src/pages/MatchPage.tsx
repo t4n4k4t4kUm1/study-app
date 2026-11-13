@@ -4,7 +4,7 @@
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { shake, softSpring, spring } from '../components/motion'
-import { StudyResult, StudyStart } from '../components/StudyParts'
+import { NotEnoughCards, StudyResult, StudyStart } from '../components/StudyParts'
 import { correctTextOf } from '../lib/choice'
 import { range, shuffle } from '../lib/deck'
 import {
@@ -41,16 +41,7 @@ export function MatchPage({ repository, id }: { repository: StudySetRepository; 
 
   // URL を直接開かれたときのために、ここでも枚数を確かめる（セットの画面では札が暗くなっている）
   const availability = matchAvailability(set.cards.length)
-  if (!availability.ok) {
-    return (
-      <section className="notice">
-        <nav className="crumb">
-          <a href={href({ name: 'set', id: set.id })}>← {set.title}</a>
-        </nav>
-        <p>{availability.reason}</p>
-      </section>
-    )
-  }
+  if (!availability.ok) return <NotEnoughCards set={set} reason={availability.reason} />
 
   if (!settings) {
     return (

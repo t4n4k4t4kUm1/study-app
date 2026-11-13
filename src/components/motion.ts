@@ -7,7 +7,7 @@ export const spring: Transition = { type: 'spring', stiffness: 420, damping: 32,
 /** ゆっくりしたばね：カードをめくる、パネルが出てくる */
 export const softSpring: Transition = { type: 'spring', stiffness: 220, damping: 26 }
 /** すっと消える：消えるときは速く、目が次へ移れるように */
-export const quickOut: Transition = { duration: 0.16, ease: [0.4, 0, 1, 1] }
+const quickOut: Transition = { duration: 0.16, ease: [0.4, 0, 1, 1] }
 
 /** 画面の切り替え：下から浮かび上がり、ぼかしが晴れる。消えるときは少し上へ */
 export const pageVariants: Variants = {

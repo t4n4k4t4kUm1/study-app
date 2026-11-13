@@ -3,7 +3,7 @@
 // 例えば将来、「1文字違いなら正解」にする係や、AI に聞く係（時間がかかるので Promise を返す）に差し替えられる。
 //
 // いまの係は2人：
-//   strict（きびしい）：一字一句同じかを見る（exactJudge）
+//   strict（きびしい）：一字一句同じかを見る（isExactMatch）
 //   lenient（ゆるい） ：打ち方の違いは見逃し、中身が同じかを見る（lenientJudge）。入力モードの初期値
 
 export type Judge = (expected: string, given: string) => boolean | Promise<boolean>
@@ -18,9 +18,6 @@ export type JudgeLevel = 'lenient' | 'strict'
 export function isExactMatch(expected: string, given: string): boolean {
   return expected.replace(/\r?\n/g, ' ').trim() === given.trim()
 }
-
-/** きびしい判定：完全一致 */
-export const exactJudge: Judge = isExactMatch
 
 // 文末の句読点（「。」「、」「.」「,」「!」「?」）。全角の ！？．， は、下の NFKC で半角になってからここで消える
 const TRAILING_PUNCTUATION = /[。、.,!?]+$/
@@ -43,4 +40,4 @@ export function normalizeAnswer(text: string): string {
 export const lenientJudge: Judge = (expected, given) => normalizeAnswer(expected) === normalizeAnswer(given)
 
 /** 設定から判定係を選ぶ */
-export const judgeFor = (level: JudgeLevel): Judge => (level === 'strict' ? exactJudge : lenientJudge)
+export const judgeFor = (level: JudgeLevel): Judge => (level === 'strict' ? isExactMatch : lenientJudge)

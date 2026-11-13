@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exactJudge, isExactMatch, judgeFor, lenientJudge, normalizeAnswer } from './judge'
+import { isExactMatch, judgeFor, lenientJudge, normalizeAnswer } from './judge'
 
 describe('normalizeAnswer（比べるための形にそろえる）', () => {
   it.each([
@@ -20,17 +20,17 @@ describe('normalizeAnswer（比べるための形にそろえる）', () => {
   })
 })
 
-describe('きびしい判定（exactJudge）', () => {
+describe('きびしい判定（isExactMatch）', () => {
   it('前後の空白と、正解の中の改行だけは気にしない', () => {
     expect(isExactMatch('apple', ' apple ')).toBe(true)
     expect(isExactMatch('赤\n黄', '赤 黄')).toBe(true)
   })
 
   it('全角・大文字・空白の数・句読点の違いは不正解', () => {
-    expect(exactJudge('2', '２')).toBe(false)
-    expect(exactJudge('apple', 'Apple')).toBe(false)
-    expect(exactJudge('ice cream', 'ice  cream')).toBe(false)
-    expect(exactJudge('食べる', '食べる。')).toBe(false)
+    expect(isExactMatch('2', '２')).toBe(false)
+    expect(isExactMatch('apple', 'Apple')).toBe(false)
+    expect(isExactMatch('ice cream', 'ice  cream')).toBe(false)
+    expect(isExactMatch('食べる', '食べる。')).toBe(false)
   })
 })
 
@@ -60,7 +60,7 @@ describe('ゆるい判定（lenientJudge）', () => {
 
 describe('judgeFor', () => {
   it('設定に合わせて判定係を選ぶ', () => {
-    expect(judgeFor('strict')).toBe(exactJudge)
+    expect(judgeFor('strict')).toBe(isExactMatch)
     expect(judgeFor('lenient')).toBe(lenientJudge)
   })
 })

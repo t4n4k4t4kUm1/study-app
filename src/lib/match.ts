@@ -17,9 +17,9 @@ import type { Attempt } from './typing'
 /** 1つの盤に並べる組の最大数 */
 export const MATCH_BOARD_SIZE = 6
 /** マッチが使える最小のカード枚数 */
-export const MIN_CARDS_FOR_MATCH = 4
+const MIN_CARDS_FOR_MATCH = 4
 /** 1つの盤の最小の組数（2組以下だと、最後の1組が考えなくても決まってしまう） */
-export const MIN_BOARD_PAIRS = 3
+const MIN_BOARD_PAIRS = 3
 
 export type MatchMode = 'normal' | 'test'
 
@@ -56,8 +56,7 @@ export type Tile = { cardId: string; text: string }
 export type Board = { left: Tile[]; right: Tile[] }
 
 /** 左の列（問題側）に書く文字。forward なら問題、reverse（逆向き）なら答え */
-export const promptTextOf = (card: Card, direction: Direction) =>
-  direction === 'reverse' ? card.answer : card.question
+const promptTextOf = (card: Card, direction: Direction) => (direction === 'reverse' ? card.answer : card.question)
 
 /**
  * 1つの盤の札を作る。左は ids の順、右はばらばらに混ぜる（左と同じ並びになったら混ぜ直す）。

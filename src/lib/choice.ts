@@ -4,9 +4,9 @@ import { shuffle } from './deck'
 import type { Card } from './studySet'
 import type { Direction } from './studySession'
 
-export const CHOICE_COUNT = 4
+const CHOICE_COUNT = 4
 /** 4択が使える最小のカード枚数（正解1つ＋ほかのカードから3つ） */
-export const MIN_CARDS_FOR_CHOICE = 4
+const MIN_CARDS_FOR_CHOICE = 4
 
 /** 4択が使えるか。使えないときは、その理由（吹き出しに出す文） */
 export function choiceAvailability(cardCount: number): { ok: true } | { ok: false; reason: string } {

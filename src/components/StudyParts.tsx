@@ -14,6 +14,21 @@ import { itemVariants, listVariants, softSpring, spring } from './motion'
 
 // ---------------- はじめる前の設定 ----------------
 
+/**
+ * カードが足りなくて、その形式で学べないときの表示。
+ * セットの画面では札が暗くなっていて押せないが、URL を直接開かれたときのためにここでも出す
+ */
+export function NotEnoughCards({ set, reason }: { set: StudySet; reason: string }) {
+  return (
+    <section className="notice">
+      <nav className="crumb">
+        <a href={href({ name: 'set', id: set.id })}>← {set.title}</a>
+      </nav>
+      <p>{reason}</p>
+    </section>
+  )
+}
+
 export function StudyStart({
   set,
   repository,
